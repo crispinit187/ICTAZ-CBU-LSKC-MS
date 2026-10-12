@@ -89,13 +89,6 @@ Never commit the Supabase service key or the database password. The front end on
 5. Testing, pilot and production
 6. Later modules (for example projects, challenges and submissions), each specified separately
 
-## Team
-
-- Prince: Supabase and database
-- Crispin: platform front end and integration
-- Temwa: attendance module
-- Katonga: members and executives
-- To be assigned: analytics, emails and quality
 
 ## Licence
 
