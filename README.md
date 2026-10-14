@@ -82,12 +82,12 @@ Never commit the Supabase service key or the database password. The front end on
 
 ## Roadmap
 
-1. Core platform: accounts, statuses, sign-in, roles, audit log
-2. Members and executives
-3. Attendance module
-4. Analytics, reports, emails and retention jobs
-5. Testing, pilot and production
-6. Later modules (for example projects, challenges and submissions), each specified separately
+1. Core platform: accounts, statuses, sign-in, roles, audit log.
+2. Members and executives.
+3. Attendance module.
+4. Analytics, reports, emails and retention jobs.
+5. Testing, pilot and production.
+6. Later modules (for example projects, challenges and submissions), each specified separately.
 
 
 ## Licence
