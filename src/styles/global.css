@@ -1,0 +1,130 @@
+/* Shared page rule from the approved design. Each screen's own rules live in screens.css. */
+body {
+  margin: 0;
+  background: #050505;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* confirmation dialog */
+.cd-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  font-family: Arial, Helvetica, sans-serif;
+  animation: cdFade 0.15s ease;
+}
+.cd-card {
+  width: 100%;
+  max-width: 440px;
+  box-sizing: border-box;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid #333;
+  background: #0d0d0d;
+  color: #fff;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+}
+.cd-cancel:hover {
+  border-color: #54adff !important;
+}
+.cd-card button:focus-visible,
+.cd-card textarea:focus-visible,
+.cd-card input:focus-visible {
+  outline: 2px solid #54adff;
+  outline-offset: 2px;
+}
+@keyframes cdFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* motion */
+.page-in {
+  animation: pageIn 0.25s ease backwards;
+}
+.page-out {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+@keyframes pageIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cdPop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: fadeUp 0.3s ease backwards;
+}
+[role="status"],
+[role="alert"] {
+  animation: fadeUp 0.2s ease backwards;
+}
+button,
+a,
+select,
+input:not([type="checkbox"]) {
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    opacity 0.15s,
+    box-shadow 0.15s,
+    transform 0.1s;
+}
+button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-in,
+  .page-out,
+  .cd-backdrop,
+  .cd-card,
+  .rise,
+  [role="status"],
+  [role="alert"] {
+    animation: none !important;
+    transition: none !important;
+  }
+  button,
+  a,
+  select,
+  input {
+    transition: none !important;
+  }
+  button:active:not(:disabled) {
+    transform: none;
+  }
+}

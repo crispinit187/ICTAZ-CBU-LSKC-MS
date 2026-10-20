@@ -1,0 +1,86 @@
+.scr-auth a {
+  color: #54adff;
+  text-decoration: none;
+}
+.scr-auth a:hover {
+  color: #bcd6ff;
+  text-decoration: underline;
+}
+.scr-auth .btn-primary:hover {
+  background: #0054d6 !important;
+}
+.scr-auth .btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed !important;
+  background: #0066ff !important;
+}
+.scr-auth .btn-google:hover {
+  border-color: #54adff !important;
+  background: rgba(84, 173, 255, 0.08) !important;
+}
+.scr-auth .btn-ghost:hover {
+  border-color: #54adff !important;
+}
+.scr-auth .field:focus {
+  border-color: #54adff !important;
+  background: rgba(84, 173, 255, 0.05) !important;
+  outline: none;
+}
+.scr-auth .link-btn:hover {
+  color: #ffffff !important;
+}
+.scr-auth button:focus-visible,
+.scr-auth a:focus-visible,
+.scr-auth input[type="checkbox"]:focus-visible {
+  outline: 2px solid #54adff;
+  outline-offset: 2px;
+}
+.scr-auth .opt {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.scr-auth .opt[aria-selected="true"],
+.scr-auth .opt:hover {
+  background: rgba(84, 173, 255, 0.14);
+}
+.scr-auth .switch {
+  position: relative;
+  width: 52px;
+  height: 30px;
+  border-radius: 30px;
+  border: 1px solid #333;
+  background: #1a1a1a;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+}
+.scr-auth .switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #aebfda;
+  transition:
+    transform 0.15s,
+    background 0.15s;
+}
+.scr-auth .switch[aria-checked="true"] {
+  background: rgba(61, 220, 151, 0.2);
+  border-color: rgba(61, 220, 151, 0.6);
+}
+.scr-auth .switch[aria-checked="true"]::after {
+  transform: translateX(22px);
+  background: #3ddc97;
+}
+@media (prefers-reduced-motion: reduce) {
+  .scr-auth .switch::after {
+    transition: none;
+  }
+}

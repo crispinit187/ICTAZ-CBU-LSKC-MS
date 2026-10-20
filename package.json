@@ -1,0 +1,21 @@
+{
+  "name": "ictaz-cbu-lksc-ms",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "ICTAZ CBU LSKC Management System front end (React + Vite). Attendance is the first module.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.18.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.2.0",
+    "vite": "^7.3.7"
+  }
+}
