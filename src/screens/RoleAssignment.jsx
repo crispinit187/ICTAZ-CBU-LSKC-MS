@@ -4,7 +4,7 @@ import { AdminSidebar } from "../components/admin/AdminShell.jsx";
 
 const renderScreen = (v, props) => (
   <div
-    className="scr-roles"
+    className="scr-admin scr-roles"
     style={{
       minHeight: "1000px",
       display: "flex",
@@ -97,6 +97,7 @@ const renderScreen = (v, props) => (
             </span>
           </div>
           <div
+            className="roles-head"
             style={{
               marginTop: "16px",
               display: "grid",
@@ -119,6 +120,7 @@ const renderScreen = (v, props) => (
           {v.staff.map((p, $i) => (
             <React.Fragment key={$i}>
               <div
+                className="roles-row"
                 style={{
                   display: "grid",
                   gridTemplateColumns:
@@ -158,7 +160,10 @@ const renderScreen = (v, props) => (
                 >
                   {p.role}
                 </span>
-                <div style={{ display: "flex", gap: "8px", width: "190px" }}>
+                <div
+                  className="roles-actions"
+                  style={{ display: "flex", gap: "8px", width: "190px" }}
+                >
                   <button
                     className="btn-danger"
                     type="button"
