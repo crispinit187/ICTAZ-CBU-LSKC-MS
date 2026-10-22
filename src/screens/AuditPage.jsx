@@ -10,6 +10,7 @@ import {
   th,
 } from "../components/admin/ui.jsx";
 import { actionText, live, rpc } from "../lib/api.js";
+import { auditRows } from "../lib/auditText.js";
 
 const PAGE = 50;
 const when = (iso) =>
@@ -20,6 +21,36 @@ const when = (iso) =>
     hour: "2-digit",
     minute: "2-digit",
   });
+
+function AuditDetail({ before, after }) {
+  const rows = auditRows(before, after);
+  if (!rows.length)
+    return <span style={{ color: T.dim }}>No further details were kept.</span>;
+  const hasBefore = rows.some((x) => x.hadBefore);
+  const cell = { padding: "6px 14px 6px 0", fontSize: 13, textAlign: "left" };
+  return (
+    <table style={{ borderCollapse: "collapse" }}>
+      <thead>
+        <tr style={{ color: T.dim }}>
+          <th style={{ ...cell, fontWeight: 600 }}>What changed</th>
+          {hasBefore && <th style={{ ...cell, fontWeight: 600 }}>Before</th>}
+          <th style={{ ...cell, fontWeight: 600 }}>
+            {hasBefore ? "After" : "Value"}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((x) => (
+          <tr key={x.label}>
+            <td style={{ ...cell, color: T.muted }}>{x.label}</td>
+            {hasBefore && <td style={cell}>{x.before}</td>}
+            <td style={cell}>{x.after}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
 
 export default function AuditPage() {
   const [q, setQ] = useState("");
@@ -140,20 +171,7 @@ export default function AuditPage() {
                       colSpan={6}
                       style={{ ...td, background: "rgba(255,255,255,0.03)" }}
                     >
-                      <pre
-                        style={{
-                          margin: 0,
-                          whiteSpace: "pre-wrap",
-                          color: T.muted,
-                          fontSize: 13,
-                          fontFamily: "inherit",
-                        }}
-                      >
-                        {"Before: " +
-                          JSON.stringify(r.before || {}, null, 1) +
-                          "\nAfter: " +
-                          JSON.stringify(r.after || {}, null, 1)}
-                      </pre>
+                      <AuditDetail before={r.before} after={r.after} />
                     </td>
                   </tr>
                 )}
