@@ -63,10 +63,10 @@ const renderScreen = (v, props) => (
           fontWeight: "600",
         }}
       >
-        <a href="#" style={{ color: "#aaaaaa" }}>
+        <a href="#scan" onClick={v.goScan} style={{ color: "#aaaaaa" }}>
           Scan my own attendance
         </a>
-        <span style={{ color: "#aebfda" }}>Sample Registrar</span>
+        <span style={{ color: "#aebfda" }}>{v.userName}</span>
         <a href="#" onClick={v.signOut}>
           Sign out
         </a>
@@ -141,7 +141,7 @@ const renderScreen = (v, props) => (
                     background: "#3ddc97",
                   }}
                 ></span>
-                Window open
+                {v.windowText}
               </span>
             </div>
             <h1
@@ -151,11 +151,34 @@ const renderScreen = (v, props) => (
                 letterSpacing: "-0.8px",
               }}
             >
-              Weekly Chapter Meeting
+              {v.sessTitle}
             </h1>
             <div style={{ color: "#aebfda", fontSize: "14px" }}>
-              Today · 16:00 to 17:30 · Main Hall
+              {v.sessWhen}
             </div>
+            {v.sessions.length > 1 && (
+              <select
+                aria-label="Session to mark"
+                value={v.sessionId}
+                onChange={v.onSession}
+                style={{
+                  marginTop: "10px",
+                  padding: "8px 10px",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  borderRadius: "8px",
+                  color: "#f1f6ff",
+                  fontFamily: "inherit",
+                  fontSize: "13px",
+                }}
+              >
+                {v.sessions.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.title}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           <div style={{ display: "flex", gap: "26px" }}>
             <div>
@@ -238,6 +261,22 @@ const renderScreen = (v, props) => (
             The student number is shown on every result, so members with the
             same name are easy to tell apart.
           </div>
+          {v.errorText && (
+            <div
+              role="alert"
+              style={{
+                margin: "0 0 12px",
+                padding: "12px 14px",
+                borderRadius: "10px",
+                background: "rgba(255,107,107,0.1)",
+                border: "1px solid rgba(255,107,107,0.4)",
+                color: "#ffb3b3",
+                fontSize: "14px",
+              }}
+            >
+              {v.errorText}
+            </div>
+          )}
           {v.showPrompt && (
             <>
               <div
@@ -662,7 +701,7 @@ class Screen extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      query: "mw",
+      query: this.props.real ? "" : "mw",
       panel: null,
       reason: "",
       actions: [],
@@ -721,7 +760,25 @@ class Screen extends React.Component {
   now() {
     return new Date().toTimeString().slice(0, 5);
   }
+  async commitReal(m, text, reason, dot) {
+    const r = this.props.real;
+    const call = /^Unmarked|^Removed excuse/.test(text)
+      ? () => r.unmark(m.id, reason.replace(/^Reason: /, ""))
+      : /^Excused/.test(text)
+        ? () => r.excuse(m.id, reason.replace(/^Reason: /, ""))
+        : () => r.mark(m.id);
+    const err = await call();
+    if (err) {
+      this.setState({ errorText: err, panel: null, reason: "" });
+      return;
+    }
+    const actions = [{ text, reason, time: this.now(), dot }]
+      .concat(this.state.actions)
+      .slice(0, 8);
+    this.setState({ actions, panel: null, reason: "", errorText: "" });
+  }
   commit(m, status, text, reason, dot) {
+    if (this.props.real) return this.commitReal(m, text, reason, dot);
     const members = this.state.members.map((x) =>
       x.id === m.id ? Object.assign({}, x, { status: status }) : x,
     );
@@ -758,9 +815,22 @@ class Screen extends React.Component {
         "#bcd6ff",
       ],
     };
+    const real = this.props.real;
+    const pool = real
+      ? real.results.map((x) => ({
+          id: x.id,
+          name: x.name,
+          no: x.student_number,
+          prog: x.program || "—",
+          year: (x.year_of_study || "—") + "," + (x.semester_of_study || "—"),
+          status: x.status,
+        }))
+      : s.members;
     const matches =
       q.length >= 2
-        ? s.members.filter((m) => m.name.toLowerCase().indexOf(q) > -1)
+        ? real
+          ? pool
+          : pool.filter((m) => m.name.toLowerCase().indexOf(q) > -1)
         : [];
     const results = matches.slice(0, 6).map((m) => {
       const c = chips[m.status];
@@ -843,12 +913,39 @@ class Screen extends React.Component {
         },
       };
     });
-    const present = s.members.filter((m) => m.status === "present").length + 85;
-    const excused = s.members.filter((m) => m.status === "excused").length + 2;
+    const present = real
+      ? real.live.present
+      : s.members.filter((m) => m.status === "present").length + 85;
+    const excused = real
+      ? real.live.excused
+      : s.members.filter((m) => m.status === "excused").length + 2;
     return {
+      userName: real ? real.userName : "Sample Registrar",
+      windowText: real
+        ? real.session.status === "Open"
+          ? "Window open"
+          : "Window closed"
+        : "Window open",
+      sessTitle: real ? real.session.title : "Weekly Chapter Meeting",
+      sessWhen: real ? real.when : "Today · 16:00 to 17:30 · Main Hall",
+      sessions: real ? real.sessions : [],
+      sessionId: real ? real.session.id : "",
+      onSession: (e) => real.onSession(e.target.value),
+      errorText: s.errorText || "",
+      goScan: (e) => {
+        e.preventDefault();
+        if (this.props.onNavigate) this.props.onNavigate("/scan");
+      },
       query: s.query,
-      onQuery: (e) =>
-        this.setState({ query: e.target.value, panel: null, reason: "" }),
+      onQuery: (e) => {
+        this.setState({
+          query: e.target.value,
+          panel: null,
+          reason: "",
+          errorText: "",
+        });
+        if (real) real.onSearch(e.target.value);
+      },
       results: results,
       showPrompt: q.length < 2,
       showNone: q.length >= 2 && matches.length === 0,

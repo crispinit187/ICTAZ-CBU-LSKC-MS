@@ -21,8 +21,7 @@ const GROUPS = [
         key: "sessions",
         label: "Sessions",
         to: "/admin/sessions",
-        any: ["session.create", "attendance.view_list"],
-        built: false,
+        any: ["session.create"],
       },
       {
         key: "members",

@@ -10,12 +10,14 @@ import {
 import { gateOf, homeFor, useAuth } from "./auth/AuthProvider.jsx";
 import { GateOnly, Protected } from "./auth/guards.jsx";
 import { demoOpen } from "./lib/supabase.js";
+import { live, rpc } from "./lib/api.js";
 import LoginScreen from "./screens/LoginScreen.jsx";
 import AdminDashboardPage from "./screens/AdminDashboardPage.jsx";
 import ApprovalsPage from "./screens/ApprovalsPage.jsx";
 import MembersPage from "./screens/MembersPage.jsx";
-import RegistrarMarking from "./screens/RegistrarMarking.jsx";
-import QrDisplay from "./screens/QrDisplay.jsx";
+import SessionsPage from "./screens/SessionsPage.jsx";
+import RegistrarPage from "./screens/RegistrarPage.jsx";
+import QrDisplayPage from "./screens/QrDisplayPage.jsx";
 import MemberScan from "./screens/MemberScan.jsx";
 import RoleAssignment from "./screens/RoleAssignment.jsx";
 import RegisterScreen from "./screens/RegisterScreen.jsx";
@@ -114,9 +116,26 @@ function Login() {
 
 function Scan() {
   const [params] = useSearchParams();
+  const auth = useAuth();
+  const nav = useNavigate();
+  const real =
+    live() && auth.ctx
+      ? {
+          firstName: String(auth.ctx.name || "").split(" ")[0] || "there",
+          onScan: async (text) => {
+            const r = await rpc("scan_attendance", { p_token: text });
+            return r.error ? { result: "error" } : r.data;
+          },
+        }
+      : undefined;
   return (
     <PhoneFrame>
-      <Routed as={MemberScan} demoState={params.get("demo") || "success"} />
+      <Routed
+        as={MemberScan}
+        demoState={params.get("demo") || "success"}
+        real={real}
+        onNavigate={nav}
+      />
     </PhoneFrame>
   );
 }
@@ -125,7 +144,7 @@ function Display() {
   const [params] = useSearchParams();
   return (
     <FitStage width={1440} height={810}>
-      <QrDisplay demoSeconds={Number(params.get("seconds")) || 12} />
+      <QrDisplayPage demoSeconds={Number(params.get("seconds")) || 12} />
     </FitStage>
   );
 }
@@ -197,7 +216,7 @@ function AppRoutes({ location }) {
         path="/registrar"
         element={
           <Protected need="attendance.mark_manual">
-            <Routed as={RegistrarMarking} />
+            <RegistrarPage />
           </Protected>
         }
       />
@@ -214,6 +233,14 @@ function AppRoutes({ location }) {
         element={
           <Protected need="account.approve">
             <ApprovalsPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/admin/sessions"
+        element={
+          <Protected need="session.create">
+            <SessionsPage />
           </Protected>
         }
       />

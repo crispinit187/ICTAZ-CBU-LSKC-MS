@@ -57,6 +57,11 @@ export default function AdminDashboardPage() {
       await load();
       return r.error;
     },
+    onClose: async (id) => {
+      const r = await rpc("close_session", { p_id: id });
+      await load();
+      return r.error;
+    },
     onDecline: async (id, reason) => {
       const r = await rpc("decline_registration", {
         p_id: id,

@@ -588,7 +588,7 @@ const renderScreen = (v, props) => (
               <button
                 className="btn-primary"
                 type="button"
-                onClick={() => v.go("/display")}
+                onClick={() => v.go(v.displayPath)}
                 style={{
                   flex: "1 1 140px",
                   padding: "12px 16px",
@@ -1334,6 +1334,8 @@ class Screen extends React.Component {
       showOpenButtons: !!open && isBuilt("sessions"),
       showExport: isBuilt("reports"),
       windowOpen: !!open,
+      openId: open ? open.id : "",
+      displayPath: open ? "/display?session=" + open.id : "/display",
     };
   }
 
@@ -1398,6 +1400,7 @@ class Screen extends React.Component {
       reviewCount: 3,
       showSessions: true,
       showOpenButtons: true,
+      displayPath: "/display",
       showExport: true,
       toast: s.toast,
       livePresent: s.present,
@@ -1478,15 +1481,30 @@ class Screen extends React.Component {
     v.closeWindow = () =>
       this.ask({
         title: "Close the attendance window?",
-        body: "Weekly Chapter Meeting will stop accepting scans. Members who scan after this are told attendance is closed, and a Registrar must mark them by hand.",
+        body:
+          v.openTitle +
+          " will stop accepting scans. Members who scan after this are told attendance is closed, and a Registrar must mark them by hand.",
         confirmLabel: "Close window",
         tone: "warning",
-        run: () =>
+        run: () => {
+          if (this.props.real) {
+            this.props.real.onClose(v.openId).then((err) =>
+              this.setState({
+                toast:
+                  err ||
+                  "Attendance window closed for " +
+                    v.openTitle +
+                    ". The change is in the audit log.",
+              }),
+            );
+            return;
+          }
           this.setState({
             windowClosed: true,
             toast:
               "Attendance window closed for Weekly Chapter Meeting. The change is in the audit log.",
-          }),
+          });
+        },
       });
     v.queue.forEach((q) => {
       q.approve = () => this.act(q, true);

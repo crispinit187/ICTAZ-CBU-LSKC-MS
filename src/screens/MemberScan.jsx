@@ -1,5 +1,6 @@
 import React from "react";
 import ConfirmDialog, { UnsavedGuard } from "../components/ConfirmDialog.jsx";
+import CameraScanner from "../components/CameraScanner.jsx";
 
 const renderScreen = (v, props) => (
   <div
@@ -50,7 +51,7 @@ const renderScreen = (v, props) => (
           fontWeight: "600",
         }}
       >
-        <a href="#" style={{ color: "#aaaaaa" }}>
+        <a href="#profile" onClick={v.goProfile} style={{ color: "#aaaaaa" }}>
           My account
         </a>
         <a href="#" onClick={v.signOut}>
@@ -94,7 +95,7 @@ const renderScreen = (v, props) => (
               letterSpacing: "-1.2px",
             }}
           >
-            Hello, Sample.
+            {v.hello}
           </h1>
           <p
             style={{
@@ -241,6 +242,7 @@ const renderScreen = (v, props) => (
                 "linear-gradient(180deg, #0b1424, #0d1a30 50%, #07101e)",
             }}
           >
+            {v.real && !v.busy && <CameraScanner onCode={v.onCode} />}
             <div
               style={{
                 position: "absolute",
@@ -329,35 +331,98 @@ const renderScreen = (v, props) => (
               seconds.
             </div>
           </div>
-          <button
-            className="btn-primary"
-            type="button"
-            onClick={v.finishScan}
-            style={{
-              marginTop: "16px",
-              height: "52px",
-              border: "none",
-              borderRadius: "8px",
-              background: "#0066ff",
-              color: "#ffffff",
-              fontFamily: "inherit",
-              fontSize: "15px",
-              fontWeight: "bold",
-              cursor: "pointer",
-            }}
-          >
-            Demo: simulate a scan
-          </button>
-          <div
-            style={{
-              marginTop: "10px",
-              textAlign: "center",
-              color: "#75859e",
-              fontSize: "12px",
-            }}
-          >
-            In the real app the camera reads the code automatically.
-          </div>
+          {!v.real && (
+            <>
+              <button
+                className="btn-primary"
+                type="button"
+                onClick={v.finishScan}
+                style={{
+                  marginTop: "16px",
+                  height: "52px",
+                  border: "none",
+                  borderRadius: "8px",
+                  background: "#0066ff",
+                  color: "#ffffff",
+                  fontFamily: "inherit",
+                  fontSize: "15px",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                }}
+              >
+                Demo: simulate a scan
+              </button>
+              <div
+                style={{
+                  marginTop: "10px",
+                  textAlign: "center",
+                  color: "#75859e",
+                  fontSize: "12px",
+                }}
+              >
+                In the real app the camera reads the code automatically.
+              </div>
+            </>
+          )}
+          {v.real && (
+            <form
+              onSubmit={v.submitManual}
+              style={{
+                marginTop: "14px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+              }}
+            >
+              <label
+                htmlFor="manual-code"
+                style={{ color: "#aebfda", fontSize: "13px" }}
+              >
+                Camera not working? Paste the code here.
+              </label>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input
+                  id="manual-code"
+                  value={v.manual}
+                  onChange={v.onManual}
+                  autoComplete="off"
+                  spellCheck="false"
+                  style={{
+                    flex: "1",
+                    minWidth: "0",
+                    height: "44px",
+                    padding: "0 12px",
+                    boxSizing: "border-box",
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                    borderRadius: "8px",
+                    color: "#f1f6ff",
+                    fontFamily: "inherit",
+                    fontSize: "14px",
+                  }}
+                />
+                <button
+                  className="btn-primary"
+                  type="submit"
+                  disabled={v.busy || v.manual.trim().length < 10}
+                  style={{
+                    height: "44px",
+                    padding: "0 16px",
+                    border: "none",
+                    borderRadius: "8px",
+                    background: "#0066ff",
+                    color: "#ffffff",
+                    fontFamily: "inherit",
+                    fontSize: "14px",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                  }}
+                >
+                  Send
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </>
     )}
@@ -457,12 +522,9 @@ const renderScreen = (v, props) => (
                     SESSION
                   </div>
                   <div style={{ fontWeight: "bold", fontSize: "16px" }}>
-                    Weekly Chapter Meeting
+                    {v.resSession}
                   </div>
-                  <div style={{ color: "#aebfda" }}>
-                    {"Main Hall · "}
-                    {v.resTime}
-                  </div>
+                  <div style={{ color: "#aebfda" }}>{v.resWhere}</div>
                   <div
                     style={{
                       marginTop: "8px",
@@ -534,7 +596,36 @@ const renderScreen = (v, props) => (
 class Screen extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { screen: "idle", outcome: "success", time: "16:12" };
+    this.state = {
+      screen: "idle",
+      outcome: "success",
+      time: "16:12",
+      busy: false,
+      manual: "",
+      session: "Weekly Chapter Meeting",
+      where: "Main Hall · 16:12",
+    };
+    this.onCode = this.onCode.bind(this);
+  }
+  async onCode(text) {
+    const real = this.props.real;
+    if (!real || this.state.busy) return;
+    this.setState({ busy: true });
+    const r = await real.onScan(text);
+    const at = r.at ? new Date(r.at) : new Date();
+    const time = at.toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    this.setState({
+      busy: false,
+      screen: "result",
+      outcome: r.result || "error",
+      session: r.session_title || "",
+      where: (r.venue ? r.venue + " · " : "") + time,
+      time,
+      manual: "",
+    });
   }
   renderVals() {
     const s = this.state;
@@ -564,6 +655,33 @@ class Screen extends React.Component {
         icon: "M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z",
         title: "That code has expired",
         body: "Codes change every 45 seconds. Scan the code that is on the screen now.",
+        details: false,
+      },
+      invalid: {
+        bg: "rgba(255,176,32,0.12)",
+        border: "rgba(255,176,32,0.5)",
+        color: "#ffb020",
+        icon: "M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z",
+        title: "That is not a valid code",
+        body: "Scan the code that is on the screen at the venue now.",
+        details: false,
+      },
+      blocked: {
+        bg: "rgba(255,176,32,0.12)",
+        border: "rgba(255,176,32,0.5)",
+        color: "#ffb020",
+        icon: "M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z",
+        title: "A Registrar has updated your attendance",
+        body: "Your record for this session was changed by a Registrar. Ask them if you think it is wrong.",
+        details: false,
+      },
+      error: {
+        bg: "rgba(255,107,107,0.12)",
+        border: "rgba(255,107,107,0.5)",
+        color: "#ff6b6b",
+        icon: "M6 6l12 12M18 6L6 18",
+        title: "Could not record that",
+        body: "Check your connection and try again. If it keeps failing, ask a Registrar to mark you.",
         details: false,
       },
       closed: {
@@ -596,6 +714,24 @@ class Screen extends React.Component {
       resBody: r.body,
       resDetails: r.details,
       resTime: s.time,
+      real: !!this.props.real,
+      busy: s.busy,
+      onCode: this.onCode,
+      manual: s.manual,
+      onManual: (e) => this.setState({ manual: e.target.value }),
+      submitManual: (e) => {
+        e.preventDefault();
+        this.onCode(s.manual.trim());
+      },
+      goProfile: (e) => {
+        e.preventDefault();
+        if (this.props.onNavigate) this.props.onNavigate("/profile");
+      },
+      hello: this.props.real
+        ? "Hello, " + this.props.real.firstName + "."
+        : "Hello, Sample.",
+      resSession: s.session,
+      resWhere: s.where,
     };
   }
 

@@ -1,4 +1,5 @@
 import React from "react";
+import QRCode from "qrcode";
 
 const renderScreen = (v, props) => (
   <div
@@ -97,17 +98,15 @@ const renderScreen = (v, props) => (
           <h1
             style={{
               margin: "0",
-              fontSize: "62px",
+              fontSize: v.titleSize,
               lineHeight: "0.98",
               letterSpacing: "-2.5px",
             }}
           >
-            Weekly Chapter
-            <br />
-            Meeting
+            {v.title}
           </h1>
           <p style={{ margin: "18px 0 0", color: "#d2d2d2", fontSize: "20px" }}>
-            Today · 16:00 to 17:30 · Main Hall
+            {v.when}
           </p>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
@@ -235,7 +234,7 @@ const renderScreen = (v, props) => (
         >
           <div style={{ position: "relative", width: "100%", height: "100%" }}>
             <svg
-              viewBox="-2 -2 33 33"
+              viewBox={v.viewBox}
               shapeRendering="crispEdges"
               role="img"
               aria-label="Attendance QR code, changes automatically"
@@ -252,7 +251,7 @@ const renderScreen = (v, props) => (
               <path d={v.prevPath} fill="#000000" />
             </svg>
             <svg
-              viewBox="-2 -2 33 33"
+              viewBox={v.viewBox}
               shapeRendering="crispEdges"
               aria-hidden="true"
               style={{
@@ -319,28 +318,27 @@ const renderScreen = (v, props) => (
         fontSize: "14px",
       }}
     >
-      <span>
-        A new code appears every 45 seconds. Each old code still works for 10
-        seconds, so a scan during the change is not lost.
-      </span>
-      <button
-        className="btn-ghost"
-        type="button"
-        onClick={v.toggleDrop}
-        style={{
-          padding: "8px 14px",
-          border: "1px solid #3d4d68",
-          borderRadius: "8px",
-          background: "transparent",
-          color: "#cfe0ff",
-          fontFamily: "inherit",
-          fontSize: "13px",
-          fontWeight: "bold",
-          cursor: "pointer",
-        }}
-      >
-        {v.dropLabel}
-      </button>
+      <span>{v.footerText}</span>
+      {v.showDemoBtn && (
+        <button
+          className="btn-ghost"
+          type="button"
+          onClick={v.toggleDrop}
+          style={{
+            padding: "8px 14px",
+            border: "1px solid #3d4d68",
+            borderRadius: "8px",
+            background: "transparent",
+            color: "#cfe0ff",
+            fontFamily: "inherit",
+            fontSize: "13px",
+            fontWeight: "bold",
+            cursor: "pointer",
+          }}
+        >
+          {v.dropLabel}
+        </button>
+      )}
     </footer>
   </div>
 );
@@ -361,7 +359,38 @@ class Screen extends React.Component {
   period() {
     return Math.max(5, Number(this.props.demoSeconds) || 12);
   }
+  qrPath(text) {
+    // a real QR code: one square per dark module
+    const q = QRCode.create(text, { errorCorrectionLevel: "M" });
+    const n = q.modules.size;
+    let d = "";
+    for (let y = 0; y < n; y++)
+      for (let c = 0; c < n; c++)
+        if (q.modules.data[y * n + c]) d += "M" + c + " " + y + "h1v1h-1z";
+    return { d, n };
+  }
+  componentDidUpdate(prev) {
+    const r = this.props.real;
+    if (r && r.token && (!prev.real || prev.real.token !== r.token)) {
+      const next = this.qrPath(r.token);
+      this.setState((s) => ({
+        prevPath: s.curPath || next.d,
+        curPath: next.d,
+        size: next.n,
+        fadeIn: false,
+      }));
+      setTimeout(() => this.setState({ fadeIn: true }), 40);
+    }
+  }
   componentDidMount() {
+    const r = this.props.real;
+    if (r) {
+      if (r.token) {
+        const first = this.qrPath(r.token);
+        this.setState({ curPath: first.d, prevPath: first.d, size: first.n });
+      }
+      return;
+    }
     this.setState({ remaining: this.period() });
     this.timer = setInterval(() => {
       const s = this.state;
@@ -423,7 +452,51 @@ class Screen extends React.Component {
     }
     return d;
   }
+  realVals() {
+    const s = this.state;
+    const r = this.props.real;
+    const period = r.period || 45;
+    const low = r.remaining <= 5;
+    const st = r.dropped
+      ? {
+          bg: "rgba(255,176,32,0.14)",
+          border: "rgba(255,176,32,0.5)",
+          color: "#ffd98a",
+          text: "Reconnecting. Showing the last valid code.",
+        }
+      : {
+          bg: "rgba(61,220,151,0.12)",
+          border: "rgba(61,220,151,0.45)",
+          color: "#9df0c8",
+          text: "Live and connected",
+        };
+    const n = s.size || 29;
+    return {
+      statusBg: st.bg,
+      statusBorder: st.border,
+      statusColor: st.color,
+      statusText: st.text,
+      present: r.present,
+      curPath: s.curPath || "",
+      prevPath: s.prevPath || "",
+      curOpacity: s.fadeIn ? 1 : 0,
+      prevOpacity: s.fadeIn ? 0 : 1,
+      remaining: r.remaining,
+      barWidth: Math.max(0, Math.min(100, (r.remaining / period) * 100)),
+      barColor: low ? "#ff6b6b" : "#54adff",
+      viewBox: "-2 -2 " + (n + 4) + " " + (n + 4),
+      title: r.title,
+      titleSize: r.title.length > 28 ? "44px" : "62px",
+      when: r.when,
+      footerText:
+        "A new code appears every " +
+        period +
+        " seconds. Each old code still works for 10 seconds, so a scan during the change is not lost.",
+      showDemoBtn: false,
+    };
+  }
   renderVals() {
+    if (this.props.real) return this.realVals();
     const s = this.state;
     const period = this.period();
     const low = s.remaining <= 5;
@@ -453,6 +526,19 @@ class Screen extends React.Component {
       remaining: s.remaining,
       barWidth: Math.max(0, Math.min(100, (s.remaining / period) * 100)),
       barColor: low ? "#ff6b6b" : "#54adff",
+      viewBox: "-2 -2 33 33",
+      title: (
+        <>
+          Weekly Chapter
+          <br />
+          Meeting
+        </>
+      ),
+      titleSize: "62px",
+      when: "Today · 16:00 to 17:30 · Main Hall",
+      footerText:
+        "A new code appears every 45 seconds. Each old code still works for 10 seconds, so a scan during the change is not lost.",
+      showDemoBtn: true,
       dropLabel: s.dropped
         ? "Demo: restore connection"
         : "Demo: drop connection",
