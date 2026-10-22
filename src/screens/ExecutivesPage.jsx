@@ -13,7 +13,7 @@ import {
 } from "../components/admin/ui.jsx";
 import { can, useAuth } from "../auth/AuthProvider.jsx";
 import { live, rpc } from "../lib/api.js";
-import { pictureUrl } from "../lib/picture.js";
+import PictureCircle from "../components/PictureCircle.jsx";
 
 const fmt = (d) =>
   d
@@ -436,16 +436,10 @@ export default function ExecutivesPage() {
                     style={{ display: "flex", gap: 12, alignItems: "center" }}
                   >
                     {r.picture_path ? (
-                      <img
-                        src={pictureUrl(r.picture_path)}
-                        alt=""
-                        style={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: "50%",
-                          objectFit: "cover",
-                          flex: "0 0 40px",
-                        }}
+                      <PictureCircle
+                        path={r.picture_path}
+                        size={40}
+                        name={r.name}
                       />
                     ) : (
                       <span

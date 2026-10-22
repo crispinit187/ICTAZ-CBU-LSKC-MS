@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { live, rpc } from "../lib/api.js";
-import { pictureUrl } from "../lib/picture.js";
+import PictureCircle from "../components/PictureCircle.jsx";
 
 const SAMPLE = [
   { name: "Sample President", title: "President", picture: null },
@@ -130,18 +130,12 @@ export default function PublicExecutives() {
                     padding: "8px 0",
                   }}
                 >
-                  {n.picture && pictureUrl(n.picture) ? (
-                    <img
-                      src={pictureUrl(n.picture)}
-                      alt={n.name}
-                      style={{
-                        width: 64,
-                        height: 64,
-                        flex: "0 0 64px",
-                        borderRadius: "50%",
-                        objectFit: "cover",
-                        border: "2px solid rgba(84,173,255,0.5)",
-                      }}
+                  {n.picture ? (
+                    <PictureCircle
+                      path={n.picture}
+                      size={64}
+                      name={n.name}
+                      border="2px solid rgba(84,173,255,0.5)"
                     />
                   ) : (
                     <span

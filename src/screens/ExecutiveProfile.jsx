@@ -12,7 +12,14 @@ import { Splash } from "../auth/guards.jsx";
 import AccountCards from "../components/AccountCards.jsx";
 import { homeFor, useAuth } from "../auth/AuthProvider.jsx";
 import { live, rpc } from "../lib/api.js";
-import { pictureUrl, removeFile, uploadPicture } from "../lib/picture.js";
+import PictureAdjust from "../components/PictureAdjust.jsx";
+import PictureCircle from "../components/PictureCircle.jsx";
+import {
+  checkFile,
+  pictureUrl,
+  removeFile,
+  uploadPicture,
+} from "../lib/picture.js";
 
 // Sample data for the design demo. The real values come from the member record and executive profile.
 const ME = {
@@ -97,6 +104,7 @@ export default function ExecutiveProfile() {
   const [confirm, setConfirm] = useState(null);
   const [photo, setPhoto] = useState(null);
   const [photoErr, setPhotoErr] = useState(null);
+  const [adjust, setAdjust] = useState(null);
   const file = useRef(null);
   const real = live();
   const [prof, setProf] = useState(null);
@@ -189,8 +197,15 @@ export default function ExecutiveProfile() {
     const fl = ev.target.files && ev.target.files[0];
     ev.target.value = "";
     if (!fl) return;
+    const bad = checkFile(fl);
+    if (bad) return setPhotoErr(bad);
     setPhotoErr(null);
-    const up = await uploadPicture(auth.ctx.id, fl);
+    setAdjust(fl);
+  };
+  const saveReal = async (thumb) => {
+    const fl = adjust;
+    setAdjust(null);
+    const up = await uploadPicture(auth.ctx.id, fl, thumb);
     if (up.error) return setPhotoErr(up.error);
     const r = await rpc("set_my_picture", { p_path: up.path });
     if (r.error) {
@@ -323,9 +338,16 @@ export default function ExecutiveProfile() {
             flexWrap: "wrap",
           }}
         >
-          {(real ? realPhoto : photo) ? (
+          {real && realPhoto ? (
+            <PictureCircle
+              path={prof.executive.picture_path}
+              size={88}
+              name="Your profile picture"
+              border="2px solid rgba(84,173,255,0.5)"
+            />
+          ) : !real && photo ? (
             <img
-              src={real ? realPhoto : photo}
+              src={photo}
               alt="Your profile picture"
               style={{
                 width: 88,
@@ -454,6 +476,13 @@ export default function ExecutiveProfile() {
             </div>
           )}
         </div>
+        {adjust && (
+          <PictureAdjust
+            file={adjust}
+            onSave={saveReal}
+            onCancel={() => setAdjust(null)}
+          />
+        )}
         {photoErr && (
           <div
             role="alert"
