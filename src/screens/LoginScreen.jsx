@@ -413,6 +413,26 @@ const renderDesktop = (v, props) => (
                 </div>
               </>
             )}
+            {v.confirmedNote && (
+              <div
+                role="status"
+                style={{
+                  marginBottom: "20px",
+                  padding: "14px 16px",
+                  borderRadius: "10px",
+                  background: "rgba(61,220,151,0.1)",
+                  border: "1px solid rgba(61,220,151,0.4)",
+                  color: "#9df0c8",
+                  fontSize: "14px",
+                  lineHeight: "1.55",
+                }}
+              >
+                <strong style={{ color: "#e8fff4" }}>Email confirmed.</strong>
+                <br />
+                Next, an Administrator needs to approve your account. You can
+                sign in once it is approved.
+              </div>
+            )}
             {v.showPending && (
               <>
                 <div
@@ -428,11 +448,12 @@ const renderDesktop = (v, props) => (
                   }}
                 >
                   <strong style={{ color: "#e8f0ff" }}>
-                    Your account is waiting for approval.
+                    Waiting for Administrator approval
                   </strong>
                   <br />
-                  An Administrator checks each registration. You will get an
-                  email as soon as it is approved.
+                  Your account has not been approved yet. An Administrator
+                  checks each registration. You can sign in as soon as it is
+                  approved. Try again later.
                 </div>
               </>
             )}
@@ -953,6 +974,26 @@ const renderMobile = (v, props) => (
             </div>
           </>
         )}
+        {v.confirmedNote && (
+          <div
+            role="status"
+            style={{
+              marginBottom: "16px",
+              padding: "14px 16px",
+              borderRadius: "10px",
+              background: "rgba(61,220,151,0.1)",
+              border: "1px solid rgba(61,220,151,0.4)",
+              color: "#9df0c8",
+              fontSize: "13px",
+              lineHeight: "1.55",
+            }}
+          >
+            <strong style={{ color: "#e8fff4" }}>Email confirmed.</strong>
+            <br />
+            Next, an Administrator needs to approve your account. You can sign
+            in once it is approved.
+          </div>
+        )}
         {v.showPending && (
           <>
             <div
@@ -968,10 +1009,11 @@ const renderMobile = (v, props) => (
               }}
             >
               <strong style={{ color: "#e8f0ff" }}>
-                Your account is waiting for approval.
+                Waiting for Administrator approval
               </strong>
               <br />
-              You will get an email as soon as an Administrator approves it.
+              Your account has not been approved yet. You can sign in as soon as
+              it is approved. Try again later.
             </div>
           </>
         )}
@@ -1419,6 +1461,7 @@ class Screen extends React.Component {
       showWrong: o === "wrong",
       showDelay: o === "delay",
       showPending: o === "pending",
+      confirmedNote: !!this.props.confirmed && o !== "pending",
       showSuspended: o === "suspended",
       showSuccess: o === "success",
       countdown: s.countdown,

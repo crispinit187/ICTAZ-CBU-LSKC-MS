@@ -450,36 +450,122 @@ export default function RegisterScreen() {
               letterSpacing: "-1px",
             }}
           >
-            Registration received
+            {google ? "Registration received" : "Check your email"}
           </h1>
-          <p
-            style={{
-              margin: 0,
-              color: "#aebfda",
-              fontSize: 15,
-              lineHeight: 1.7,
-            }}
-          >
-            Thanks, {f.name.split(" ")[0]}. Your account is{" "}
-            <strong style={{ color: "#fff" }}>waiting for approval</strong>. An
-            Administrator will check your details.
-            {needsConfirm
-              ? ` We sent a confirmation link to ${f.email}. Open it to confirm your email address.`
-              : ""}
-          </p>
-          <p
-            style={{
-              margin: "14px 0 26px",
-              color: "#75859e",
-              fontSize: 13,
-              lineHeight: 1.6,
-            }}
-          >
-            You cannot sign in until you are approved.{" "}
-            {google
-              ? "When you are approved, sign in with Google using this same email."
-              : "When you are approved, sign in with your student number or email."}
-          </p>
+          {google ? (
+            <p
+              style={{
+                margin: 0,
+                color: "#aebfda",
+                fontSize: 15,
+                lineHeight: 1.7,
+              }}
+            >
+              Thanks, {f.name.split(" ")[0]}. Your account is{" "}
+              <strong style={{ color: "#fff" }}>
+                waiting for Administrator approval
+              </strong>
+              . When you are approved, sign in with Google using{" "}
+              <strong style={{ color: "#fff" }}>{f.email}</strong>.
+            </p>
+          ) : (
+            <>
+              <p
+                style={{
+                  margin: 0,
+                  color: "#aebfda",
+                  fontSize: 15,
+                  lineHeight: 1.7,
+                }}
+              >
+                Thanks, {f.name.split(" ")[0]}.{" "}
+                {needsConfirm
+                  ? "We sent a confirmation link to "
+                  : "Your registration was sent for "}
+                {needsConfirm ? (
+                  <strong style={{ color: "#fff" }}>{f.email}</strong>
+                ) : (
+                  <strong style={{ color: "#fff" }}>approval</strong>
+                )}
+                .
+              </p>
+              <ol
+                style={{
+                  margin: "22px auto 0",
+                  padding: 0,
+                  listStyle: "none",
+                  maxWidth: 380,
+                  textAlign: "left",
+                  display: "grid",
+                  gap: 12,
+                }}
+              >
+                {[
+                  needsConfirm && [
+                    "Confirm your email",
+                    "Open the link we sent you. Check your spam folder if you cannot find it.",
+                  ],
+                  [
+                    "Wait for Administrator approval",
+                    "An Administrator checks each registration. You cannot sign in until you are approved.",
+                  ],
+                  [
+                    "Sign in",
+                    "Use your student number or email once you are approved.",
+                  ],
+                ]
+                  .filter(Boolean)
+                  .map(([t, d], i) => (
+                    <li
+                      key={t}
+                      style={{
+                        display: "flex",
+                        gap: 12,
+                        padding: "12px 14px",
+                        borderRadius: 12,
+                        background: "rgba(255,255,255,0.03)",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                      }}
+                    >
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          flex: "0 0 26px",
+                          height: 26,
+                          borderRadius: "50%",
+                          background: "rgba(84,173,255,0.16)",
+                          color: "#54adff",
+                          fontSize: 13,
+                          fontWeight: "bold",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {i + 1}
+                      </span>
+                      <span>
+                        <strong style={{ display: "block", fontSize: 14 }}>
+                          {t}
+                        </strong>
+                        <span
+                          style={{
+                            display: "block",
+                            marginTop: 2,
+                            color: "#8a99b3",
+                            fontSize: 13,
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          {d}
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+              </ol>
+            </>
+          )}
+          <div style={{ height: 26 }}></div>
           <PrimaryButton type="button" onClick={() => nav("/login")}>
             Back to sign in
           </PrimaryButton>

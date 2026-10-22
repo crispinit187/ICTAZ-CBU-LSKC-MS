@@ -63,6 +63,13 @@ function Login() {
   const auth = useAuth();
   // Real sign-in is used when Supabase is configured. ?demo= or VITE_DEMO_OPEN keeps the demo outcomes.
   const real = auth.configured && !demoOpen && !params.get("demo");
+  // Opening the confirmation email brings the person here with type=signup in the address.
+  // Remember it before Supabase clears the address.
+  const [confirmed] = useState(() =>
+    /type=signup|type=email|confirmed=1/.test(
+      window.location.hash + window.location.search,
+    ),
+  );
   const notice =
     params.get("notice") === "google"
       ? "That Google account is not linked to an approved account. You can register, or sign in with your password."
@@ -109,6 +116,7 @@ function Login() {
       demoState={params.get("demo") || "wrong"}
       compact={compact}
       notice={notice}
+      confirmed={confirmed}
       onSignIn={real ? onSignIn : undefined}
       onGoogle={real ? onGoogle : undefined}
       onRegister={() => nav("/register")}
