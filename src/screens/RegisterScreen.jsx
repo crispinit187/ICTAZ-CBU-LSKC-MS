@@ -211,8 +211,10 @@ export default function RegisterScreen() {
   // Real programme names and counts for the suggestions.
   useEffect(() => {
     if (!real) return;
+    setPrograms([]); // never show the sample programmes against a real database
+    bump((n) => n + 1);
     supabase.rpc("programs_public").then(({ data, error }) => {
-      if (error || !data || !data.length) return;
+      if (error || !data) return;
       setPrograms(
         data.map((r) => ({ name: r.name, count: Number(r.members) })),
       );

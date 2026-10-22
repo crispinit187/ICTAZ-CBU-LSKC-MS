@@ -33,7 +33,7 @@ let KNOWN_PROGRAMS = [
 
 // Replace the sample list with the real programmes from the database.
 export function setPrograms(list) {
-  if (Array.isArray(list) && list.length) KNOWN_PROGRAMS = list;
+  if (Array.isArray(list)) KNOWN_PROGRAMS = list;
 }
 
 export function normalise(s) {

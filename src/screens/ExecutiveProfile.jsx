@@ -8,6 +8,7 @@ import {
   Eyebrow,
 } from "../components/auth/AuthParts.jsx";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
+import { Splash } from "../auth/guards.jsx";
 import AccountCards from "../components/AccountCards.jsx";
 import { useAuth } from "../auth/AuthProvider.jsx";
 import { live, rpc } from "../lib/api.js";
@@ -252,6 +253,8 @@ export default function ExecutiveProfile() {
       <span style={{ textAlign: "right" }}>{v}</span>
     </div>
   );
+
+  if (real && !prof) return <Splash />;
 
   return (
     <AuthPage width={720} right={signOut}>
