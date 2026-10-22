@@ -151,6 +151,7 @@ export function AuthProvider({ children }) {
         if (body && body.code === "delay")
           return { error: "delay", retryAfter: body.retry_after || 30 };
         if (body && body.code === "invalid") return { error: "wrong" };
+        if (body && body.code === "unconfirmed") return { error: "unconfirmed" };
         if (body && body.code === "bad_request") return { error: "invalid" };
         return { error: "unavailable" };
       } else {

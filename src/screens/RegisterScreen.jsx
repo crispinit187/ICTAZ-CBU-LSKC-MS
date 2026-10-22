@@ -16,8 +16,11 @@ import {
   inputStyle,
 } from "../components/auth/AuthParts.jsx";
 import ConfirmDialog, { UnsavedGuard } from "../components/ConfirmDialog.jsx";
+import { useAuth } from "../auth/AuthProvider.jsx";
+import { normalisePhone } from "../lib/phone.js";
 import { passwordChecks } from "../lib/password.js";
-import { findGroup, normalise, suggest } from "../lib/programs.js";
+import { configured, demoOpen, supabase } from "../lib/supabase.js";
+import { findGroup, normalise, setPrograms, suggest } from "../lib/programs.js";
 
 const EMPTY = {
   name: "",
@@ -39,8 +42,8 @@ function validate(f, google) {
     e.studentNumber = "A student number is exactly 8 digits.";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email.trim()))
     e.email = "Enter a valid email address.";
-  if (f.phone.trim() && !/^\+?[0-9 ]{9,15}$/.test(f.phone.trim()))
-    e.phone = "Use digits only, for example +260 97 123 4567.";
+  if (f.phone.trim() && !normalisePhone(f.phone))
+    e.phone = "Use a Zambian number, for example +260 97 123 4567.";
   if (!normalise(f.program))
     e.program = "Enter your programme, for example Computer Engineering.";
   if (!f.year) e.year = "Choose your year of study.";
@@ -146,7 +149,7 @@ function ProgramField({ value, onChange, error }) {
               >
                 <span>{p.name}</span>
                 <span style={{ color: "#75859e", fontSize: 12 }}>
-                  {p.count} members
+                  {p.count} {p.count === 1 ? "member" : "members"}
                 </span>
               </li>
             ))}
@@ -197,6 +200,39 @@ export default function RegisterScreen() {
   const [tried, setTried] = useState(false);
   const [done, setDone] = useState(false);
   const top = useRef(null);
+  const auth = useAuth();
+  const real = configured && !demoOpen;
+  const [busy, setBusy] = useState(false);
+  const [serverErr, setServerErr] = useState({});
+  const [formErr, setFormErr] = useState(null);
+  const [needsConfirm, setNeedsConfirm] = useState(false);
+  const [, bump] = useState(0);
+
+  // Real programme names and counts for the suggestions.
+  useEffect(() => {
+    if (!real) return;
+    supabase.rpc("programs_public").then(({ data, error }) => {
+      if (error || !data || !data.length) return;
+      setPrograms(
+        data.map((r) => ({ name: r.name, count: Number(r.members) })),
+      );
+      bump((n) => n + 1);
+    });
+  }, [real]);
+
+  // Back from Google with no member record yet: finish the registration form.
+  useEffect(() => {
+    if (!real || !auth.ready || auth.ctx) return;
+    const u = auth.session && auth.session.user;
+    if (!u || !u.app_metadata || u.app_metadata.provider !== "google") return;
+    const meta = u.user_metadata || {};
+    setGoogle(true);
+    setF((p) => ({
+      ...p,
+      name: p.name || meta.full_name || meta.name || "",
+      email: u.email || p.email,
+    }));
+  }, [real, auth.ready, auth.session, auth.ctx]);
 
   const set = (k) => (e) =>
     setF({
@@ -212,10 +248,23 @@ export default function RegisterScreen() {
     });
   }, [f, google, done]);
   const errs = validate(f, google);
-  const show = (k) => (tried || touched[k]) && errs[k];
+  const show = (k) => ((tried || touched[k]) && errs[k]) || serverErr[k];
   const dirty = !done && JSON.stringify(f) !== JSON.stringify(EMPTY);
 
-  const useGoogle = () => {
+  const useGoogle = async () => {
+    if (real) {
+      setFormErr(null);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo:
+            window.location.origin + import.meta.env.BASE_URL + "register",
+        },
+      });
+      if (error)
+        setFormErr("Google sign-in is not switched on yet. Use a password.");
+      return;
+    }
     setGoogle(true);
     setF({
       ...f,
@@ -225,11 +274,57 @@ export default function RegisterScreen() {
       confirm: "",
     });
   };
-  const clearGoogle = () => {
+  const clearGoogle = async () => {
+    if (real) await auth.signOut();
     setGoogle(false);
     setF({ ...f, name: "", email: "" });
   };
-  const submit = (e) => {
+
+  const explain = (err) => {
+    const code = (err && (err.code || err.error_code)) || "";
+    const msg = (err && err.message) || "";
+    if (code === "PGRST202" || /could not find the function/i.test(msg))
+      return {
+        form: "Registration is not switched on yet. The database setup (migration 0002) has not been run.",
+      };
+    if (code === "user_already_exists" || /already registered/i.test(msg))
+      return {
+        fields: {
+          email:
+            "That email already has an account. Sign in, or reset your password.",
+        },
+      };
+    if (code === "weak_password")
+      return {
+        fields: {
+          password: "That password is too easy to guess. Try a longer one.",
+        },
+      };
+    if (code === "over_email_send_rate_limit" || err.status === 429)
+      return {
+        form: "Too many sign-up emails were sent just now. Wait a few minutes and try again.",
+      };
+    if (
+      /database error/i.test(msg) ||
+      code === "unexpected_failure" ||
+      code === "23505"
+    )
+      return {
+        form: "We could not create the account. The student number or email may already be registered.",
+      };
+    if (code === "email_address_invalid")
+      return {
+        fields: {
+          email:
+            "That email address was refused. Use a real address you can open.",
+        },
+      };
+    return {
+      form: "Something went wrong. Check your connection and try again.",
+    };
+  };
+
+  const submit = async (e) => {
     e.preventDefault();
     setTried(true);
     if (Object.keys(errs).length) {
@@ -237,9 +332,79 @@ export default function RegisterScreen() {
       if (first) first.focus();
       return;
     }
-    clearDraft();
-    setDone(true);
-    window.scrollTo(0, 0);
+    if (!real) {
+      clearDraft();
+      setDone(true);
+      window.scrollTo(0, 0);
+      return;
+    }
+    setBusy(true);
+    setFormErr(null);
+    setServerErr({});
+    try {
+      const free = await supabase.rpc("student_number_available", {
+        p_number: f.studentNumber,
+      });
+      if (free.error) throw free.error;
+      if (free.data === false) {
+        setServerErr({
+          studentNumber:
+            "That student number is already registered. If it is yours, sign in or reset your password.",
+        });
+        requestAnimationFrame(() => {
+          const first = document.querySelector('[aria-invalid="true"]');
+          if (first) first.focus();
+        });
+        return;
+      }
+      const phone = normalisePhone(f.phone);
+      if (google) {
+        const r = await supabase.rpc("register_google_member", {
+          p_name: f.name.trim(),
+          p_student_number: f.studentNumber,
+          p_phone: phone,
+          p_program: f.program.trim(),
+          p_year: Number(f.year),
+          p_semester: Number(f.semester),
+        });
+        if (r.error) throw r.error;
+        setNeedsConfirm(false);
+        await auth.signOut();
+      } else {
+        const r = await supabase.auth.signUp({
+          email: f.email.trim(),
+          password: f.password,
+          options: {
+            emailRedirectTo:
+              window.location.origin + import.meta.env.BASE_URL + "login",
+            data: {
+              name: f.name.trim(),
+              student_number: f.studentNumber,
+              phone,
+              program: f.program.trim(),
+              year_of_study: String(f.year),
+              semester_of_study: String(f.semester),
+            },
+          },
+        });
+        if (r.error) throw r.error;
+        setNeedsConfirm(!r.data.session);
+        if (r.data.session) await auth.signOut();
+      }
+      clearDraft();
+      setDone(true);
+      window.scrollTo(0, 0);
+    } catch (err) {
+      const x = explain(err);
+      if (x.fields) setServerErr(x.fields);
+      if (x.form) setFormErr(x.form);
+      requestAnimationFrame(() => {
+        const first = document.querySelector('[aria-invalid="true"]');
+        if (first) first.focus();
+      });
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (done) {
@@ -295,8 +460,10 @@ export default function RegisterScreen() {
           >
             Thanks, {f.name.split(" ")[0]}. Your account is{" "}
             <strong style={{ color: "#fff" }}>waiting for approval</strong>. An
-            Administrator will check your details, and we will email {f.email}{" "}
-            when it is done.
+            Administrator will check your details.
+            {needsConfirm
+              ? ` We sent a confirmation link to ${f.email}. Open it to confirm your email address.`
+              : ""}
           </p>
           <p
             style={{
@@ -367,7 +534,9 @@ export default function RegisterScreen() {
       <Card>
         {!google ? (
           <>
-            <GoogleButton onClick={useGoogle}>Fill in with Google</GoogleButton>
+            <GoogleButton onClick={useGoogle}>
+              {real ? "Continue with Google" : "Fill in with Google"}
+            </GoogleButton>
             <div
               style={{
                 margin: "22px 0",
@@ -421,6 +590,7 @@ export default function RegisterScreen() {
           </Banner>
         )}
 
+        {formErr && <Banner tone="bad">{formErr}</Banner>}
         <form onSubmit={submit} noValidate>
           <Field id="name" label="Full name" error={show("name")}>
             <TextInput
@@ -583,7 +753,9 @@ export default function RegisterScreen() {
           </CheckBox>
 
           <div style={{ marginTop: 22 }}>
-            <PrimaryButton type="submit">Submit registration</PrimaryButton>
+            <PrimaryButton type="submit" disabled={busy}>
+              {busy ? "Submitting..." : "Submit registration"}
+            </PrimaryButton>
           </div>
         </form>
         <p

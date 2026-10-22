@@ -10,6 +10,7 @@ import {
   PrimaryButton,
   TextInput,
 } from "../components/auth/AuthParts.jsx";
+import { configured, demoOpen, supabase } from "../lib/supabase.js";
 
 /* Step 1 of a password reset (SRS 7.4). The reply is always the same, whether or not an
    account matches, so nobody can use this page to find out who is registered (AU-19). */
@@ -30,9 +31,39 @@ export default function ForgotPassword() {
     return () => clearTimeout(t);
   }, [wait]);
 
-  const submit = (e) => {
+  const real = configured && !demoOpen;
+  const [busy, setBusy] = useState(false);
+
+  // The reply is the same whether or not an account matches (AU-19).
+  const sendReal = async (v) => {
+    const redirectTo =
+      window.location.origin + import.meta.env.BASE_URL + "reset-password";
+    if (/^\d{8}$/.test(v)) {
+      const r = await supabase.functions.invoke("forgot-password", {
+        body: { identifier: v, redirectTo },
+      });
+      if (r.error) {
+        const status = r.error.context && r.error.context.status;
+        if (status === 429) return { limited: true };
+        return {
+          error:
+            "Reset by student number is not switched on yet. Use the email on your account.",
+        };
+      }
+      return {};
+    }
+    const r = await supabase.auth.resetPasswordForEmail(v, { redirectTo });
+    if (
+      r.error &&
+      (r.error.status === 429 || /rate/i.test(r.error.message || ""))
+    )
+      return { limited: true };
+    return {};
+  };
+
+  const submit = async (e) => {
     e.preventDefault();
-    if (wait > 0) return;
+    if (wait > 0 || busy) return;
     const v = id.trim();
     if (!/^\d{8}$/.test(v) && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) {
       setError(
@@ -43,6 +74,27 @@ export default function ForgotPassword() {
       return;
     }
     setError(null);
+    if (real) {
+      setBusy(true);
+      let res = {};
+      try {
+        res = await sendReal(v);
+      } catch (err) {
+        res = {
+          error:
+            "We could not reach the service. Check your connection and try again.",
+        };
+      }
+      setBusy(false);
+      if (res.error) {
+        setError(res.error);
+        return;
+      }
+      if (res.limited) {
+        setWait(DELAY);
+        return;
+      }
+    }
     const n = tries + 1;
     setTries(n);
     setSent(true);
@@ -188,8 +240,12 @@ export default function ForgotPassword() {
               placeholder="e.g. 23144450 or name@gmail.com"
             />
           </Field>
-          <PrimaryButton type="submit" disabled={wait > 0}>
-            {wait > 0 ? `Try again in ${wait}s` : "Send reset link"}
+          <PrimaryButton type="submit" disabled={wait > 0 || busy}>
+            {busy
+              ? "Sending..."
+              : wait > 0
+                ? `Try again in ${wait}s`
+                : "Send reset link"}
           </PrimaryButton>
         </form>
         <p

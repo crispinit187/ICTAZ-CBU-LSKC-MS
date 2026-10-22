@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AuthPage,
@@ -7,6 +7,7 @@ import {
   Card,
   Eyebrow,
 } from "../components/auth/AuthParts.jsx";
+import { latestTerms } from "../lib/terms.js";
 
 // Sample wording for the design demo. Super Admins publish the real text and each new version (TC-09).
 const DOCS = {
@@ -56,35 +57,63 @@ const DOCS = {
 
 export default function LegalPage({ kind }) {
   const d = DOCS[kind];
+  // The real text comes from the database once it is published; the sample is the fallback.
+  const [live, setLive] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    setLive(null);
+    latestTerms(kind).then((v) => alive && setLive(v));
+    return () => {
+      alive = false;
+    };
+  }, [kind]);
   return (
     <AuthPage width={720}>
       <BackLink label="Back" to="/login" history />
-      <Eyebrow>VERSION 2</Eyebrow>
+      <Eyebrow>{live ? "VERSION " + live.version : "VERSION 2"}</Eyebrow>
       <h1
         style={{ margin: "10px 0 18px", fontSize: 36, letterSpacing: "-1.4px" }}
       >
         {d.title}
       </h1>
-      <Banner tone="warn">
-        Sample wording for the design demo. The real text is written and
-        published by a Super Admin.
-      </Banner>
+      {!live && (
+        <Banner tone="warn">
+          Sample wording for the design demo. The real text is written and
+          published by a Super Admin.
+        </Banner>
+      )}
       <Card>
-        {d.sections.map(([h, t]) => (
-          <section key={h} style={{ marginBottom: 20 }}>
-            <h2 style={{ margin: "0 0 6px", fontSize: 18 }}>{h}</h2>
+        {live &&
+          live.body.split(/\n{2,}/).map((para, i) => (
             <p
+              key={i}
               style={{
-                margin: 0,
+                margin: "0 0 14px",
                 color: "#aebfda",
                 fontSize: 15,
                 lineHeight: 1.7,
+                whiteSpace: "pre-wrap",
               }}
             >
-              {t}
+              {para}
             </p>
-          </section>
-        ))}
+          ))}
+        {!live &&
+          d.sections.map(([h, t]) => (
+            <section key={h} style={{ marginBottom: 20 }}>
+              <h2 style={{ margin: "0 0 6px", fontSize: 18 }}>{h}</h2>
+              <p
+                style={{
+                  margin: 0,
+                  color: "#aebfda",
+                  fontSize: 15,
+                  lineHeight: 1.7,
+                }}
+              >
+                {t}
+              </p>
+            </section>
+          ))}
         <Link to={kind === "terms" ? "/privacy" : "/terms"}>
           {kind === "terms"
             ? "Read the Privacy Notice"

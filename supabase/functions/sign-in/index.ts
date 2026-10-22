@@ -12,6 +12,7 @@
 // Request:  POST { identifier: string, password: string }
 // Success:  200 { session }                       (pass to supabase.auth.setSession)
 // Failure:  401 { code: "invalid" }               wrong details, or no such account
+//           403 { code: "unconfirmed" }           right password, email not confirmed yet
 //           429 { code: "delay", retry_after }    too many attempts
 //           400 { code: "bad_request" }
 
@@ -94,6 +95,10 @@ Deno.serve(async (req: Request) => {
 
   // ---- check the password with Supabase Auth
   const { data, error } = await anon.auth.signInWithPassword({ email, password });
+  if (error && (error as { code?: string }).code === "email_not_confirmed") {
+    // Supabase checks the password first, so this only reaches a person who knows it.
+    return json(403, { code: "unconfirmed" });
+  }
   if (error || !data.session) return await fail();
 
   await admin.from("rate_limit_counters").delete().eq("key", key);

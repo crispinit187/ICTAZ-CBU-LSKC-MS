@@ -20,7 +20,7 @@ const FILLER = new Set([
   "msc",
 ]);
 
-export const KNOWN_PROGRAMS = [
+let KNOWN_PROGRAMS = [
   { name: "Computer Engineering", count: 79 },
   { name: "Information Technology", count: 76 },
   { name: "Software Engineering", count: 74 },
@@ -30,6 +30,11 @@ export const KNOWN_PROGRAMS = [
   { name: "Business Administration", count: 38 },
   { name: "Accounting and Finance", count: 30 },
 ];
+
+// Replace the sample list with the real programmes from the database.
+export function setPrograms(list) {
+  if (Array.isArray(list) && list.length) KNOWN_PROGRAMS = list;
+}
 
 export function normalise(s) {
   return s

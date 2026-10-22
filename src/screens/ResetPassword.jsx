@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   AuthPage,
   BackLink,
+  Banner,
   Card,
   Eyebrow,
   Field,
@@ -11,14 +12,25 @@ import {
   PrimaryButton,
 } from "../components/auth/AuthParts.jsx";
 import { UnsavedGuard } from "../components/ConfirmDialog.jsx";
+import { useAuth } from "../auth/AuthProvider.jsx";
+import { Splash } from "../auth/guards.jsx";
 import { passwordChecks } from "../lib/password.js";
+import { configured, demoOpen, supabase } from "../lib/supabase.js";
 
 /* Step 2: the page the emailed link opens (SRS 7.4, AU-21, AU-24).
    Demo option: /reset-password?state=valid|expired. The real page checks the link's token on the server. */
 export default function ResetPassword() {
   const nav = useNavigate();
   const [params] = useSearchParams();
-  const expired = params.get("state") === "expired";
+  const auth = useAuth();
+  const real = configured && !demoOpen && !params.get("state");
+  // A link that failed or ran out comes back with an error in the address (#error_code=otp_expired).
+  const [linkError] = useState(() => /error/i.test(window.location.hash));
+  const [busy, setBusy] = useState(false);
+  const [failMsg, setFailMsg] = useState(null);
+  const expired = real
+    ? linkError || (auth.ready && !auth.session)
+    : params.get("state") === "expired";
   const [pw, setPw] = useState("");
   const [confirm, setConfirm] = useState("");
   const [tried, setTried] = useState(false);
@@ -30,7 +42,7 @@ export default function ResetPassword() {
   const errConfirm =
     tried && confirm !== pw ? "The two passwords do not match." : null;
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     setTried(true);
     if (bad || confirm !== pw) {
@@ -40,7 +52,31 @@ export default function ResetPassword() {
       });
       return;
     }
-    setDone(true);
+    if (!real) {
+      setDone(true);
+      return;
+    }
+    setBusy(true);
+    setFailMsg(null);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: pw });
+      if (error) {
+        setFailMsg(
+          error.code === "same_password"
+            ? "Choose a password you have not used before."
+            : error.code === "weak_password"
+              ? "That password is too easy to guess. Try a longer one."
+              : "We could not save the new password. The link may have expired.",
+        );
+        return;
+      }
+      await supabase.auth.signOut({ scope: "global" });
+      setDone(true);
+    } catch (err) {
+      setFailMsg("Something went wrong. Check your connection and try again.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const iconCard = (tone, path, title, body, button) => (
@@ -96,6 +132,8 @@ export default function ResetPassword() {
     </AuthPage>
   );
 
+  if (real && !auth.ready && !linkError) return <Splash />;
+
   if (expired) {
     return iconCard(
       ["rgba(255,176,32,0.12)", "rgba(255,176,32,0.5)", "#ffb020"],
@@ -146,6 +184,7 @@ export default function ResetPassword() {
         other device is signed out.
       </p>
       <Card>
+        {failMsg && <Banner tone="bad">{failMsg}</Banner>}
         <form onSubmit={submit} noValidate>
           <Field id="pw" label="New password" error={errPw}>
             <PasswordInput
@@ -167,7 +206,9 @@ export default function ResetPassword() {
             />
           </Field>
           <div style={{ marginTop: 22 }}>
-            <PrimaryButton type="submit">Save new password</PrimaryButton>
+            <PrimaryButton type="submit" disabled={busy}>
+              {busy ? "Saving..." : "Save new password"}
+            </PrimaryButton>
           </div>
         </form>
       </Card>
