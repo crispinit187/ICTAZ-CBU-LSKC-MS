@@ -15,7 +15,7 @@ It was checked only on a local Postgres stub. My attempt to run it on the live p
 `supabase/functions/sign-in/index.ts` accepts an 8-digit student number, an email, or `admin`, rate-limits with `rate_limit_counters` (5 failures, 10 min window, 30 s delay; TODO read these from `settings`), and returns the same 401 for unknown account and wrong password. Until it is deployed the front end signs in by email directly and shows "student number not switched on yet" for student numbers.
 
 ## 3. Supabase settings
-- Auth > Providers: enable Google. Add the site URL and `http://localhost:5173/login` to redirect URLs.
+- Auth > Providers: enable Google. Add the site URL and `https://crispinit187.github.io/ICTAZ-CBU-LSKC-MS/login` to redirect URLs.
 - Auth > Email: enable "Confirm email" (SRS AU-02).
 - Auth > Passwords: enable leaked password protection (advisor warning).
 - Create the bootstrap Super Admin: a `members` row with `is_bootstrap = true`, `must_change_password = true`, status Active, and the Super Admin role. Do not put the initial password in any document.
@@ -38,4 +38,6 @@ npm install
 copy .env.example .env.local   # fill in VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
 npm run dev
 ```
+
+The deployed site is https://crispinit187.github.io/ICTAZ-CBU-LSKC-MS/ (GitHub Actions, `.github/workflows/pages.yml`).
 `VITE_DEMO_OPEN=true` in `.env.local` opens every screen without an account (local use only).

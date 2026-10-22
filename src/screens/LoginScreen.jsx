@@ -47,7 +47,7 @@ const renderDesktop = (v, props) => (
         }}
       >
         <a
-          href="/terms"
+          href={import.meta.env.BASE_URL + "terms"}
           onClick={(e) => {
             e.preventDefault();
             props.onTerms && props.onTerms();
@@ -57,7 +57,7 @@ const renderDesktop = (v, props) => (
           Terms of Use
         </a>
         <a
-          href="/privacy"
+          href={import.meta.env.BASE_URL + "privacy"}
           onClick={(e) => {
             e.preventDefault();
             props.onPrivacy && props.onPrivacy();
@@ -598,7 +598,7 @@ const renderDesktop = (v, props) => (
               }}
             >
               <a
-                href="/forgot-password"
+                href={import.meta.env.BASE_URL + "forgot-password"}
                 onClick={(e) => {
                   e.preventDefault();
                   props.onForgot && props.onForgot(v.identifier);
@@ -720,7 +720,7 @@ const renderDesktop = (v, props) => (
           >
             {" New to the chapter? "}
             <a
-              href="/register"
+              href={import.meta.env.BASE_URL + "register"}
               onClick={(e) => {
                 e.preventDefault();
                 props.onRegister && props.onRegister();
@@ -745,7 +745,7 @@ const renderDesktop = (v, props) => (
           >
             {"By signing in you accept the "}
             <a
-              href="/terms"
+              href={import.meta.env.BASE_URL + "terms"}
               onClick={(e) => {
                 e.preventDefault();
                 props.onTerms && props.onTerms();
@@ -755,7 +755,7 @@ const renderDesktop = (v, props) => (
             </a>
             {" and "}
             <a
-              href="/privacy"
+              href={import.meta.env.BASE_URL + "privacy"}
               onClick={(e) => {
                 e.preventDefault();
                 props.onPrivacy && props.onPrivacy();
@@ -1124,7 +1124,7 @@ const renderMobile = (v, props) => (
           }}
         >
           <a
-            href="/forgot-password"
+            href={import.meta.env.BASE_URL + "forgot-password"}
             onClick={(e) => {
               e.preventDefault();
               props.onForgot && props.onForgot(v.identifier);
@@ -1229,7 +1229,7 @@ const renderMobile = (v, props) => (
       >
         {"New to the chapter? "}
         <a
-          href="/register"
+          href={import.meta.env.BASE_URL + "register"}
           onClick={(e) => {
             e.preventDefault();
             props.onRegister && props.onRegister();
@@ -1252,7 +1252,7 @@ const renderMobile = (v, props) => (
         <br />
         {"By signing in you accept the "}
         <a
-          href="/terms"
+          href={import.meta.env.BASE_URL + "terms"}
           onClick={(e) => {
             e.preventDefault();
             props.onTerms && props.onTerms();
@@ -1262,7 +1262,7 @@ const renderMobile = (v, props) => (
         </a>
         {" and "}
         <a
-          href="/privacy"
+          href={import.meta.env.BASE_URL + "privacy"}
           onClick={(e) => {
             e.preventDefault();
             props.onPrivacy && props.onPrivacy();
