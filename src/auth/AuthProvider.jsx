@@ -17,6 +17,13 @@ const Ctx = createContext(null);
 // Name of the deployed sign-in Edge Function. Set VITE_SIGNIN_FUNCTION if it was deployed under another name.
 const SIGN_IN_FUNCTION = import.meta.env.VITE_SIGNIN_FUNCTION || "sign-in";
 
+// Never leave a screen waiting forever: give up after 20 seconds.
+const withTimeout = (promise, result) =>
+  Promise.race([
+    promise,
+    new Promise((resolve) => setTimeout(() => resolve(result), 20000)),
+  ]);
+
 export const useAuth = () => useContext(Ctx);
 
 export const STAFF_ROLES = [
@@ -99,7 +106,7 @@ export function AuthProvider({ children }) {
 
   /* Returns { ok: true, ctx } or { error }, where error is one of:
      invalid | wrong | delay | pending | suspended | unconfirmed | unavailable | no_account */
-  const signIn = useCallback(
+  const signInInner = useCallback(
     async (identifier, password) => {
       if (!configured) return { error: "unavailable" };
       const id = identifier.trim();
@@ -169,6 +176,12 @@ export function AuthProvider({ children }) {
     [refresh],
   );
 
+  const signIn = useCallback(
+    (identifier, password) =>
+      withTimeout(signInInner(identifier, password), { error: "unavailable" }),
+    [signInInner],
+  );
+
   const signInWithGoogle = useCallback(async () => {
     if (!configured) return { error: "unavailable" };
     const { error } = await supabase.auth.signInWithOAuth({
@@ -184,7 +197,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   /* First sign-in: new password (if required), then accept the documents. */
-  const completeFirstSignIn = useCallback(
+  const completeInner = useCallback(
     async ({ current, password, email, acceptIds }) => {
       const ctx = state.ctx;
       if (!configured || !ctx) return { error: "unavailable" };
@@ -201,6 +214,8 @@ export function AuthProvider({ children }) {
         if (update.error) {
           if (update.error.code === "same_password")
             return { error: "same_password" };
+          if (update.error.code === "email_address_invalid")
+            return { error: "email_invalid" };
           if (update.error.code === "weak_password")
             return { error: "weak_password" };
           return { error: "unavailable" };
@@ -214,6 +229,11 @@ export function AuthProvider({ children }) {
       return { ok: true, ctx: next };
     },
     [refresh, state.ctx],
+  );
+
+  const completeFirstSignIn = useCallback(
+    (args) => withTimeout(completeInner(args), { error: "timeout" }),
+    [completeInner],
   );
 
   const value = useMemo(

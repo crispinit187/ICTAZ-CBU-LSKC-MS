@@ -111,12 +111,17 @@ export default function FirstSignIn() {
     }
     setBusy(true);
     setFail(null);
-    const res = await auth.completeFirstSignIn({
-      current: f.current,
-      password: needPassword ? f.pw : null,
-      email: mode === "bootstrap" ? f.email.trim() : null,
-      acceptIds: pending.map((d) => d.id),
-    });
+    let res;
+    try {
+      res = await auth.completeFirstSignIn({
+        current: f.current,
+        password: needPassword ? f.pw : null,
+        email: mode === "bootstrap" ? f.email.trim() : null,
+        acceptIds: pending.map((d) => d.id),
+      });
+    } catch (err) {
+      res = { error: "unavailable" };
+    }
     setBusy(false);
     if (res.ok) {
       setDone(true);
@@ -127,6 +132,10 @@ export default function FirstSignIn() {
         current_wrong:
           "That temporary password is not right. Check it and try again.",
         same_password: "Choose a password you have not used before.",
+        email_invalid:
+          "That email address was refused. Use a real address you can open.",
+        timeout:
+          "This is taking too long. Check your connection and try again.",
         weak_password: "That password is too easy to guess. Try a longer one.",
         accept_failed: "We could not record your acceptance. Please try again.",
       }[res.error] || "Something went wrong. Please try again.",

@@ -1313,7 +1313,12 @@ class Screen extends React.Component {
   }
   async realSignIn(id, password) {
     this.setState({ outcome: "working" });
-    const res = await this.props.onSignIn(id, password);
+    let res;
+    try {
+      res = await this.props.onSignIn(id, password);
+    } catch (err) {
+      res = { error: "unavailable" };
+    }
     if (this._gone) return;
     if (res.ok) {
       this.setState({ outcome: "success" });
