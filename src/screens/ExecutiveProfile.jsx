@@ -261,7 +261,7 @@ export default function ExecutiveProfile() {
             confirmLabel: "Sign out",
             tone: "info",
             run: async () => {
-              await auth.signOut();
+              if (await auth.leave()) return;
               nav("/login", { replace: true });
             },
           })

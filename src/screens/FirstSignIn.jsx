@@ -154,7 +154,7 @@ export default function FirstSignIn() {
           confirmLabel: "Sign out",
           tone: "info",
           run: async () => {
-            if (real) await auth.signOut();
+            if (real && (await auth.leave())) return;
             nav("/login");
           },
         })

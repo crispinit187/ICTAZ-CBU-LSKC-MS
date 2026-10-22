@@ -95,7 +95,7 @@ export default function RegistrarPage() {
   if (!sessions) return <Splash />;
 
   const signOut = async () => {
-    await auth.signOut();
+    if (await auth.leave()) return;
     nav("/login", { replace: true });
   };
 

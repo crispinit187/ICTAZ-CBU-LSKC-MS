@@ -169,7 +169,7 @@ function Routed({ as: Comp, ...rest }) {
   const nav = useNavigate();
   const auth = useAuth();
   const out = async () => {
-    await auth.signOut();
+    if (await auth.leave()) return;
     nav("/login", { replace: true });
   };
   return <Comp {...rest} onSignOut={out} />;

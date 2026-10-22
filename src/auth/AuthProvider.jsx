@@ -151,7 +151,8 @@ export function AuthProvider({ children }) {
         if (body && body.code === "delay")
           return { error: "delay", retryAfter: body.retry_after || 30 };
         if (body && body.code === "invalid") return { error: "wrong" };
-        if (body && body.code === "unconfirmed") return { error: "unconfirmed" };
+        if (body && body.code === "unconfirmed")
+          return { error: "unconfirmed" };
         if (body && body.code === "bad_request") return { error: "invalid" };
         return { error: "unavailable" };
       } else {
@@ -187,7 +188,9 @@ export function AuthProvider({ children }) {
     if (!configured) return { error: "unavailable" };
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin + import.meta.env.BASE_URL + "login" },
+      options: {
+        redirectTo: window.location.origin + import.meta.env.BASE_URL + "login",
+      },
     });
     return error ? { error: "unavailable" } : { ok: true };
   }, []);
@@ -195,6 +198,19 @@ export function AuthProvider({ children }) {
   const signOut = useCallback(async () => {
     if (configured) await supabase.auth.signOut();
     setState({ ready: true, session: null, ctx: null, error: null });
+  }, []);
+
+  /* Signs out and loads the sign-in page fresh, so no old screen or data can be left
+     behind. Returns false when there is no backend to sign out of (demo). */
+  const leave = useCallback(async () => {
+    if (!configured) return false;
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      /* the page is reloaded either way */
+    }
+    window.location.replace(import.meta.env.BASE_URL + "login");
+    return true;
   }, []);
 
   /* First sign-in: new password (if required), then accept the documents. */
@@ -248,10 +264,19 @@ export function AuthProvider({ children }) {
       signIn,
       signInWithGoogle,
       signOut,
+      leave,
       completeFirstSignIn,
       refresh,
     }),
-    [state, signIn, signInWithGoogle, signOut, completeFirstSignIn, refresh],
+    [
+      state,
+      signIn,
+      signInWithGoogle,
+      signOut,
+      leave,
+      completeFirstSignIn,
+      refresh,
+    ],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

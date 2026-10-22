@@ -265,7 +265,7 @@ export function AdminSidebar({ active, pending }) {
                 confirmLabel: "Sign out",
                 tone: "info",
                 run: async () => {
-                  await auth.signOut();
+                  if (await auth.leave()) return;
                   nav("/login", { replace: true });
                 },
               });
