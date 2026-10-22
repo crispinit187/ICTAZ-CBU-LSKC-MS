@@ -14,6 +14,9 @@ import { configured, supabase } from "../lib/supabase.js";
    Hiding a button here is a convenience. The database enforces the real rules. */
 
 const Ctx = createContext(null);
+// Name of the deployed sign-in Edge Function. Set VITE_SIGNIN_FUNCTION if it was deployed under another name.
+const SIGN_IN_FUNCTION = import.meta.env.VITE_SIGNIN_FUNCTION || "sign-in";
+
 export const useAuth = () => useContext(Ctx);
 
 export const STAFF_ROLES = [
@@ -103,7 +106,7 @@ export function AuthProvider({ children }) {
       const isEmail = id.includes("@");
       let session = null;
 
-      const viaFunction = await supabase.functions.invoke("sign-in", {
+      const viaFunction = await supabase.functions.invoke(SIGN_IN_FUNCTION, {
         body: { identifier: id, password },
       });
       if (!viaFunction.error && viaFunction.data && viaFunction.data.session) {
