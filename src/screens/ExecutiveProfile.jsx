@@ -8,6 +8,7 @@ import {
   Eyebrow,
 } from "../components/auth/AuthParts.jsx";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
+import { useAuth } from "../auth/AuthProvider.jsx";
 
 // Sample data for the design demo. The real values come from the member record and executive profile.
 const ME = {
@@ -84,6 +85,7 @@ function Gate({ label, on, note }) {
 
 export default function ExecutiveProfile() {
   const nav = useNavigate();
+  const auth = useAuth();
   const [consent, setConsent] = useState(false);
   const [adminDisplay, setAdminDisplay] = useState(false);
   const [changed, setChanged] = useState(null);
@@ -162,7 +164,10 @@ export default function ExecutiveProfile() {
             body: "You will need to sign in again to continue.",
             confirmLabel: "Sign out",
             tone: "info",
-            run: () => nav("/login"),
+            run: async () => {
+              await auth.signOut();
+              nav("/login");
+            },
           })
         }
         style={{

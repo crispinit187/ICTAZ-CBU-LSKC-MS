@@ -7,6 +7,9 @@ import {
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
+import { gateOf, homeFor, useAuth } from "./auth/AuthProvider.jsx";
+import { GateOnly, Protected } from "./auth/guards.jsx";
+import { demoOpen } from "./lib/supabase.js";
 import LoginScreen from "./screens/LoginScreen.jsx";
 import AdminDashboard from "./screens/AdminDashboard.jsx";
 import RegistrarMarking from "./screens/RegistrarMarking.jsx";
@@ -46,10 +49,57 @@ function Login() {
   const [params] = useSearchParams();
   const compact = useMedia("(max-width: 600px)");
   const nav = useNavigate();
+  const auth = useAuth();
+  // Real sign-in is used when Supabase is configured. ?demo= or VITE_DEMO_OPEN keeps the demo outcomes.
+  const real = auth.configured && !demoOpen && !params.get("demo");
+  const notice =
+    params.get("notice") === "google"
+      ? "That Google account is not linked to an approved account. You can register, or sign in with your password."
+      : null;
+  // After the Google round trip the page reloads here with a session. Go on if the account is
+  // approved; otherwise sign out and say so (Google never creates accounts).
+  useEffect(() => {
+    let flag = false;
+    try {
+      flag = sessionStorage.getItem("lskc_google") === "1";
+    } catch (err) {
+      flag = false;
+    }
+    if (!real || !flag || !auth.ready || !auth.session) return;
+    try {
+      sessionStorage.removeItem("lskc_google");
+    } catch (err) {
+      /* ignore */
+    }
+    if (auth.ctx && auth.ctx.status === "Active") {
+      nav(gateOf(auth.ctx) ? "/first-sign-in" : homeFor(auth.ctx), {
+        replace: true,
+      });
+    } else {
+      auth.signOut().then(() => nav("/login?notice=google", { replace: true }));
+    }
+  }, [real, auth.ready, auth.session, auth.ctx]); // eslint-disable-line react-hooks/exhaustive-deps
+  const onGoogle = () => {
+    try {
+      sessionStorage.setItem("lskc_google", "1");
+    } catch (err) {
+      /* ignore */
+    }
+    return auth.signInWithGoogle();
+  };
+  const onSignIn = async (id, pw) => {
+    const r = await auth.signIn(id, pw);
+    if (r.ok)
+      nav(gateOf(r.ctx) ? "/first-sign-in" : homeFor(r.ctx), { replace: true });
+    return r;
+  };
   return (
     <LoginScreen
       demoState={params.get("demo") || "wrong"}
       compact={compact}
+      notice={notice}
+      onSignIn={real ? onSignIn : undefined}
+      onGoogle={real ? onGoogle : undefined}
       onRegister={() => nav("/register")}
       onForgot={(id) =>
         nav("/forgot-password" + (id ? "?id=" + encodeURIComponent(id) : ""))
@@ -80,7 +130,12 @@ function Display() {
 
 function Routed({ as: Comp, ...rest }) {
   const nav = useNavigate();
-  return <Comp {...rest} onSignOut={() => nav("/login")} />;
+  const auth = useAuth();
+  const out = async () => {
+    await auth.signOut();
+    nav("/login");
+  };
+  return <Comp {...rest} onSignOut={out} />;
 }
 
 const reducedMotion = () =>
@@ -120,14 +175,63 @@ function AppRoutes({ location }) {
     <Routes location={location}>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/scan" element={<Scan />} />
-      <Route path="/display" element={<Display />} />
-      <Route path="/registrar" element={<Routed as={RegistrarMarking} />} />
-      <Route path="/admin" element={<Routed as={AdminDashboard} />} />
-      <Route path="/roles" element={<Routed as={RoleAssignment} />} />
+      <Route
+        path="/scan"
+        element={
+          <Protected need="attendance.scan">
+            <Scan />
+          </Protected>
+        }
+      />
+      <Route
+        path="/display"
+        element={
+          <Protected need="session.qr_display">
+            <Display />
+          </Protected>
+        }
+      />
+      <Route
+        path="/registrar"
+        element={
+          <Protected need="attendance.mark_manual">
+            <Routed as={RegistrarMarking} />
+          </Protected>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <Protected need="analytics.view">
+            <Routed as={AdminDashboard} />
+          </Protected>
+        }
+      />
+      <Route
+        path="/roles"
+        element={
+          <Protected need="role.assign">
+            <Routed as={RoleAssignment} />
+          </Protected>
+        }
+      />
       <Route path="/register" element={<RegisterScreen />} />
-      <Route path="/first-sign-in" element={<FirstSignIn />} />
-      <Route path="/profile" element={<ExecutiveProfile />} />
+      <Route
+        path="/first-sign-in"
+        element={
+          <GateOnly>
+            <FirstSignIn />
+          </GateOnly>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <Protected need="attendance.scan">
+            <ExecutiveProfile />
+          </Protected>
+        }
+      />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/terms" element={<LegalPage kind="terms" />} />

@@ -12,6 +12,8 @@ import {
   PrimaryButton,
   TextInput,
 } from "../components/auth/AuthParts.jsx";
+import { gateOf, homeFor, useAuth } from "../auth/AuthProvider.jsx";
+import { demoOpen } from "../lib/supabase.js";
 import ConfirmDialog, { UnsavedGuard } from "../components/ConfirmDialog.jsx";
 import { passwordChecks } from "../lib/password.js";
 
@@ -25,10 +27,25 @@ const TEMP_SAMPLE = "Temp-4Kx9Qe"; // never a real password; only used so the de
 export default function FirstSignIn() {
   const nav = useNavigate();
   const [params] = useSearchParams();
-  const mode = ["temp", "bootstrap", "terms"].includes(params.get("mode"))
-    ? params.get("mode")
-    : "temp";
-  const staff = params.get("staff") === "1" || mode === "bootstrap";
+  const auth = useAuth();
+  // Real mode: the database says what is left to do. Demo mode keeps the URL options.
+  const real = auth.configured && !demoOpen && !!auth.ctx;
+  const pending = real ? auth.ctx.pending_docs || [] : [];
+  const mode = real
+    ? gateOf(auth.ctx) || "terms"
+    : ["temp", "bootstrap", "terms"].includes(params.get("mode"))
+      ? params.get("mode")
+      : "temp";
+  const staff = real
+    ? pending.some((d) => d.doc_type === "staff_confidentiality")
+    : params.get("staff") === "1" || mode === "bootstrap";
+  const hasDoc = (t) => !real || pending.some((d) => d.doc_type === t);
+  const ver = (t) => {
+    const d = pending.find((x) => x.doc_type === t);
+    return d ? d.version : "2";
+  };
+  const [busy, setBusy] = useState(false);
+  const [fail, setFail] = useState(null);
   const needPassword = mode !== "terms";
   const [f, setF] = useState({
     current: "",
@@ -65,7 +82,8 @@ export default function FirstSignIn() {
     !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email.trim())
   )
     e.email = "Add a real email address. Reset links and notices go there.";
-  if (!f.terms || !f.privacy) e.docs = "Please tick both boxes to continue.";
+  if ((hasDoc("terms") && !f.terms) || (hasDoc("privacy") && !f.privacy))
+    e.docs = "Please tick both boxes to continue.";
   if (staff && !f.staff)
     e.staff = "Staff must accept the confidentiality statement to continue.";
   const dirty =
@@ -79,7 +97,7 @@ export default function FirstSignIn() {
       f.staff);
   const shown = (k) => tried && e[k];
 
-  const submit = (ev) => {
+  const submit = async (ev) => {
     ev.preventDefault();
     setTried(true);
     if (Object.keys(e).length) {
@@ -87,7 +105,32 @@ export default function FirstSignIn() {
       if (first) first.focus();
       return;
     }
-    setDone(true);
+    if (!real) {
+      setDone(true);
+      return;
+    }
+    setBusy(true);
+    setFail(null);
+    const res = await auth.completeFirstSignIn({
+      current: f.current,
+      password: needPassword ? f.pw : null,
+      email: mode === "bootstrap" ? f.email.trim() : null,
+      acceptIds: pending.map((d) => d.id),
+    });
+    setBusy(false);
+    if (res.ok) {
+      setDone(true);
+      return;
+    }
+    setFail(
+      {
+        current_wrong:
+          "That temporary password is not right. Check it and try again.",
+        same_password: "Choose a password you have not used before.",
+        weak_password: "That password is too easy to guess. Try a longer one.",
+        accept_failed: "We could not record your acceptance. Please try again.",
+      }[res.error] || "Something went wrong. Please try again.",
+    );
   };
 
   const signOut = (
@@ -101,7 +144,10 @@ export default function FirstSignIn() {
           warning: dirty ? "What you have typed here will be discarded." : null,
           confirmLabel: "Sign out",
           tone: "info",
-          run: () => nav("/login"),
+          run: async () => {
+            if (real) await auth.signOut();
+            nav("/login");
+          },
         })
       }
       style={{
@@ -191,7 +237,9 @@ export default function FirstSignIn() {
           </p>
           <PrimaryButton
             type="button"
-            onClick={() => nav(staff ? "/admin" : "/scan")}
+            onClick={() =>
+              nav(real ? homeFor(auth.ctx) : staff ? "/admin" : "/scan")
+            }
           >
             Continue
           </PrimaryButton>
@@ -304,30 +352,38 @@ export default function FirstSignIn() {
           >
             Documents
           </div>
-          <CheckBox
-            id="terms"
-            checked={f.terms}
-            onChange={set("terms")}
-            error={null}
-          >
-            I accept the{" "}
-            <Link to="/terms" target="_blank">
-              Terms of Use
-            </Link>{" "}
-            <span style={{ color: "#75859e" }}>(version 2)</span>.
-          </CheckBox>
-          <CheckBox
-            id="privacy"
-            checked={f.privacy}
-            onChange={set("privacy")}
-            error={shown("docs") && !staff ? e.docs : null}
-          >
-            I accept the{" "}
-            <Link to="/privacy" target="_blank">
-              Privacy Notice
-            </Link>{" "}
-            <span style={{ color: "#75859e" }}>(version 2)</span>.
-          </CheckBox>
+          {hasDoc("terms") && (
+            <CheckBox
+              id="terms"
+              checked={f.terms}
+              onChange={set("terms")}
+              error={null}
+            >
+              I accept the{" "}
+              <Link to="/terms" target="_blank">
+                Terms of Use
+              </Link>{" "}
+              <span style={{ color: "#75859e" }}>(version {ver("terms")})</span>
+              .
+            </CheckBox>
+          )}
+          {hasDoc("privacy") && (
+            <CheckBox
+              id="privacy"
+              checked={f.privacy}
+              onChange={set("privacy")}
+              error={shown("docs") && !staff ? e.docs : null}
+            >
+              I accept the{" "}
+              <Link to="/privacy" target="_blank">
+                Privacy Notice
+              </Link>{" "}
+              <span style={{ color: "#75859e" }}>
+                (version {ver("privacy")})
+              </span>
+              .
+            </CheckBox>
+          )}
           {staff && (
             <CheckBox
               id="staffc"
@@ -348,9 +404,14 @@ export default function FirstSignIn() {
             </div>
           )}
 
+          {fail && <Banner tone="bad">{fail}</Banner>}
           <div style={{ marginTop: 22 }}>
-            <PrimaryButton type="submit">
-              {needPassword ? "Save and continue" : "Accept and continue"}
+            <PrimaryButton type="submit" disabled={busy}>
+              {busy
+                ? "Saving..."
+                : needPassword
+                  ? "Save and continue"
+                  : "Accept and continue"}
             </PrimaryButton>
           </div>
         </form>

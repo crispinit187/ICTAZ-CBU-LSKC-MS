@@ -657,6 +657,7 @@ const renderDesktop = (v, props) => (
           </div>
           <button
             className="btn-google"
+            onClick={props.onGoogle}
             type="button"
             style={{
               width: "100%",
@@ -1179,6 +1180,7 @@ const renderMobile = (v, props) => (
         ></div>
       </div>
       <button
+        onClick={props.onGoogle}
         type="button"
         style={{
           width: "100%",
@@ -1288,11 +1290,61 @@ class Screen extends React.Component {
     };
     this.timer = null;
   }
+  componentDidMount() {
+    if (this.props.notice)
+      this.setState({ outcome: "invalid", invalidMsg: this.props.notice });
+  }
   componentWillUnmount() {
+    this._gone = true;
     if (this.timer) clearInterval(this.timer);
+  }
+  startDelay(seconds) {
+    if (this.timer) clearInterval(this.timer);
+    this.setState({ outcome: "delay", countdown: seconds });
+    this.timer = setInterval(() => {
+      const n = Math.max(0, this.state.countdown - 1);
+      this.setState({ countdown: n });
+      if (n === 0) {
+        clearInterval(this.timer);
+        this.timer = null;
+        this.setState({ outcome: null });
+      }
+    }, 1000);
+  }
+  async realSignIn(id, password) {
+    this.setState({ outcome: "working" });
+    const res = await this.props.onSignIn(id, password);
+    if (this._gone) return;
+    if (res.ok) {
+      this.setState({ outcome: "success" });
+      return;
+    }
+    const notes = {
+      wrong: "wrong",
+      pending: "pending",
+      suspended: "suspended",
+    };
+    if (res.error === "delay") return this.startDelay(res.retryAfter || 30);
+    if (notes[res.error]) return this.setState({ outcome: notes[res.error] });
+    const msg = {
+      invalid: "Enter both your student number or email and your password.",
+      unconfirmed:
+        "Confirm your email first. We sent you a link when you registered.",
+      no_account:
+        "That Google account is not linked to an approved account. You can register, or sign in with your password.",
+      unavailable_student:
+        "Signing in with a student number is not switched on yet. Use your email address for now.",
+      unavailable:
+        "We could not reach the sign-in service. Check your connection and try again.",
+    }[res.error];
+    this.setState({
+      outcome: "invalid",
+      invalidMsg: msg || "Something went wrong. Please try again.",
+    });
   }
   idKind(v) {
     if (!v) return "empty";
+    if (v.toLowerCase() === "admin") return "admin";
     if (/^\d+$/.test(v)) return v.length === 8 ? "student" : "digits";
     if (v.indexOf("@") > -1)
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? "email" : "typing";
@@ -1311,6 +1363,7 @@ class Screen extends React.Component {
       ],
       email: ["Email address detected.", "#3ddc97"],
       typing: ["Keep typing your full email address.", "#8a99b3"],
+      admin: ["Setup account sign-in.", "#8a99b3"],
       bad: [
         "Use an 8-digit student number, or an email containing @.",
         "#ffd98a",
@@ -1336,13 +1389,15 @@ class Screen extends React.Component {
       showSuspended: o === "suspended",
       showSuccess: o === "success",
       countdown: s.countdown,
-      buttonDisabled: locked || o === "success",
+      buttonDisabled: locked || o === "success" || o === "working",
       buttonLabel:
-        o === "success"
-          ? "Signing you in..."
-          : locked
-            ? "Try again in " + s.countdown + "s"
-            : "Sign in",
+        o === "working"
+          ? "Checking..."
+          : o === "success"
+            ? "Signing you in..."
+            : locked
+              ? "Try again in " + s.countdown + "s"
+              : "Sign in",
       onIdentifier: (e) =>
         this.setState({ identifier: e.target.value, outcome: null }),
       onPassword: (e) =>
@@ -1370,6 +1425,10 @@ class Screen extends React.Component {
             invalidMsg:
               "That does not look like a student number (8 digits) or an email address.",
           });
+          return;
+        }
+        if (this.props.onSignIn) {
+          this.realSignIn(id, this.state.password);
           return;
         }
         const out = this.props.demoState || "wrong";

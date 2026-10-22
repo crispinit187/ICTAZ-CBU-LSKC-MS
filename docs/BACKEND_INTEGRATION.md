@@ -1,0 +1,41 @@
+# Backend integration notes (for Prince)
+
+Front end: React + Vite SPA. It talks to Supabase with the publishable key only. The service key lives only inside the `sign-in` Edge Function.
+
+Nothing in this folder has been applied to the live project. Please review first.
+
+## 1. Apply the migration to a branch first
+`supabase/migrations/20261022_0001_frontend_integration.sql`
+
+It adds: the `handle_new_user` trigger (email sign-ups become a Pending member with the Member role; Google sign-ins create nothing), the email-confirmed sync, the password-change trigger that clears `must_change_password`, read policies for `members`, `terms_versions`, `terms_acceptances`, `settings`, `email_templates`, `my_context()`, `accept_terms(uuid[])`, v1 sample Terms/Privacy/staff text, and `search_path` fixes for the 10 flagged functions.
+
+It was checked only on a local Postgres stub. My attempt to run it on the live project was cancelled. Triggers on the real schema (for example `enforce_role_requires_exec`, `protect_last_super_admin`) may react to the Member `user_roles` insert. Please test on a branch.
+
+## 2. Deploy the Edge Function
+`supabase/functions/sign-in/index.ts` accepts an 8-digit student number, an email, or `admin`, rate-limits with `rate_limit_counters` (5 failures, 10 min window, 30 s delay; TODO read these from `settings`), and returns the same 401 for unknown account and wrong password. Until it is deployed the front end signs in by email directly and shows "student number not switched on yet" for student numbers.
+
+## 3. Supabase settings
+- Auth > Providers: enable Google. Add the site URL and `http://localhost:5173/login` to redirect URLs.
+- Auth > Email: enable "Confirm email" (SRS AU-02).
+- Auth > Passwords: enable leaked password protection (advisor warning).
+- Create the bootstrap Super Admin: a `members` row with `is_bootstrap = true`, `must_change_password = true`, status Active, and the Super Admin role. Do not put the initial password in any document.
+
+## 4. Contract the front end relies on
+`rpc('my_context')` returns `{id, name, student_number, email, status, status_reason, must_change_password, is_bootstrap, email_verified, roles[], permissions[], pending_docs[{id,doc_type,version}]}`.
+Routes are guarded by permission code: `analytics.view` /admin, `attendance.mark_manual` /registrar, `role.assign` /roles, `session.qr_display` /display, `attendance.scan` /scan and /profile. The database policies are the real enforcement; the front end only hides screens.
+
+## 5. Things to know
+- Administrator password reset must set `must_change_password = true` AFTER changing the password, because the trigger clears the flag whenever the password hash changes.
+- Possible bug: policy `exec_self_update` has a WITH CHECK subquery comparing `executive_profiles_1.id = executive_profiles_1.id`, so it matches every row and will error once there is more than one profile.
+- `has_permission`, `is_active`, `ok_to_act` are executable by `anon`. Left alone because some policies are `TO public`. Scope those policies to `authenticated`, then revoke.
+- Registration still needs the programme text mapped to `program_id` (the trigger stores `program_raw`).
+- Still demo-only in the front end: register, forgot/reset password, profile editing, and the data on admin, registrar, roles, scan and QR screens.
+
+## 6. Front-end setup
+```
+git switch dev
+npm install
+copy .env.example .env.local   # fill in VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+npm run dev
+```
+`VITE_DEMO_OPEN=true` in `.env.local` opens every screen without an account (local use only).

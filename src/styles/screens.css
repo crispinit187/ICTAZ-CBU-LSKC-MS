@@ -1,61 +1,262 @@
-.scr-admin a{color:#54adff;text-decoration:none}
-.scr-admin a:hover{color:#bcd6ff;text-decoration:underline}
-.scr-admin .nav-item{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-radius:9px;color:#aaaaaa;font-size:14px;font-weight:600;text-decoration:none}
-.scr-admin .nav-item:hover{background:rgba(255,255,255,0.05);color:#ffffff;text-decoration:none}
-.scr-admin .btn-primary:hover{background:#0054d6}
-.scr-admin .btn-ghost:hover{border-color:#54adff}
-.scr-admin .btn-approve:hover{background:rgba(61,220,151,0.22)}
-.scr-admin .btn-decline:hover{background:rgba(255,107,107,0.2)}
-.scr-admin button:focus-visible,.scr-admin a:focus-visible,.scr-admin select:focus-visible{outline:2px solid #54adff;outline-offset:2px}
-.scr-admin .live-dot{animation:pulse 1.6s ease-in-out infinite}
-@keyframes pulse{0%{opacity:1}50%{opacity:.35}100%{opacity:1}}
+.scr-admin a {
+  color: #54adff;
+  text-decoration: none;
+}
+.scr-admin a:hover {
+  color: #bcd6ff;
+  text-decoration: underline;
+}
+.scr-admin .nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px;
+  border-radius: 9px;
+  color: #aaaaaa;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.scr-admin .nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  text-decoration: none;
+}
+.scr-admin .btn-primary:hover {
+  background: #0054d6;
+}
+.scr-admin .btn-ghost:hover {
+  border-color: #54adff;
+}
+.scr-admin .btn-approve:hover {
+  background: rgba(61, 220, 151, 0.22);
+}
+.scr-admin .btn-decline:hover {
+  background: rgba(255, 107, 107, 0.2);
+}
+.scr-admin button:focus-visible,
+.scr-admin a:focus-visible,
+.scr-admin select:focus-visible {
+  outline: 2px solid #54adff;
+  outline-offset: 2px;
+}
+.scr-admin .live-dot {
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+  100% {
+    opacity: 1;
+  }
+}
 
-.scr-registrar a{color:#54adff;text-decoration:none}
-.scr-registrar a:hover{color:#bcd6ff;text-decoration:underline}
-.scr-registrar .field:focus{border-color:#54adff !important;background:rgba(84,173,255,0.05) !important;outline:none}
-.scr-registrar .btn-primary:hover{background:#0054d6}
-.scr-registrar .btn-primary:disabled{opacity:.45;cursor:not-allowed;background:#0066ff}
-.scr-registrar .btn-ghost:hover{border-color:#54adff}
-.scr-registrar .btn-mark:hover{background:#0054d6}
-.scr-registrar .btn-warn:hover{background:rgba(255,176,32,0.22)}
-.scr-registrar .btn-danger:hover{background:rgba(255,107,107,0.2)}
-.scr-registrar .row:hover{background:rgba(255,255,255,0.03)}
-.scr-registrar button:focus-visible,.scr-registrar a:focus-visible{outline:2px solid #54adff;outline-offset:2px}
-.scr-registrar .live-dot{animation:pulse 1.6s ease-in-out infinite}
-@keyframes pulse{0%{opacity:1}50%{opacity:.35}100%{opacity:1}}
+.scr-registrar a {
+  color: #54adff;
+  text-decoration: none;
+}
+.scr-registrar a:hover {
+  color: #bcd6ff;
+  text-decoration: underline;
+}
+.scr-registrar .field:focus {
+  border-color: #54adff !important;
+  background: rgba(84, 173, 255, 0.05) !important;
+  outline: none;
+}
+.scr-registrar .btn-primary:hover {
+  background: #0054d6;
+}
+.scr-registrar .btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: #0066ff;
+}
+.scr-registrar .btn-ghost:hover {
+  border-color: #54adff;
+}
+.scr-registrar .btn-mark:hover {
+  background: #0054d6;
+}
+.scr-registrar .btn-warn:hover {
+  background: rgba(255, 176, 32, 0.22);
+}
+.scr-registrar .btn-danger:hover {
+  background: rgba(255, 107, 107, 0.2);
+}
+.scr-registrar .row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.scr-registrar button:focus-visible,
+.scr-registrar a:focus-visible {
+  outline: 2px solid #54adff;
+  outline-offset: 2px;
+}
+.scr-registrar .live-dot {
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+  100% {
+    opacity: 1;
+  }
+}
 
-.scr-qr .btn-ghost:hover{border-color:#54adff}
-.scr-qr button:focus-visible{outline:2px solid #54adff;outline-offset:2px}
-.scr-qr .live-dot{animation:pulse 1.6s ease-in-out infinite}
-@keyframes pulse{0%{opacity:1}50%{opacity:.35}100%{opacity:1}}
+.scr-qr .btn-ghost:hover {
+  border-color: #54adff;
+}
+.scr-qr button:focus-visible {
+  outline: 2px solid #54adff;
+  outline-offset: 2px;
+}
+.scr-qr .live-dot {
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+  100% {
+    opacity: 1;
+  }
+}
 
-.scr-scan a{color:#54adff;text-decoration:none}
-.scr-scan .btn-primary:hover{background:#0054d6}
-.scr-scan .btn-ghost:hover{border-color:#54adff}
-.scr-scan button:focus-visible,.scr-scan a:focus-visible{outline:2px solid #54adff;outline-offset:2px}
-.scr-scan .scanline{animation:scan 2.4s ease-in-out infinite}
-@keyframes scan{0%{top:6%}50%{top:90%}100%{top:6%}}
+.scr-scan a {
+  color: #54adff;
+  text-decoration: none;
+}
+.scr-scan .btn-primary:hover {
+  background: #0054d6;
+}
+.scr-scan .btn-ghost:hover {
+  border-color: #54adff;
+}
+.scr-scan button:focus-visible,
+.scr-scan a:focus-visible {
+  outline: 2px solid #54adff;
+  outline-offset: 2px;
+}
+.scr-scan .scanline {
+  animation: scan 2.4s ease-in-out infinite;
+}
+@keyframes scan {
+  0% {
+    top: 6%;
+  }
+  50% {
+    top: 90%;
+  }
+  100% {
+    top: 6%;
+  }
+}
 
-.scr-roles a{color:#54adff;text-decoration:none}
-.scr-roles a:hover{color:#bcd6ff;text-decoration:underline}
-.scr-roles .nav-item{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-radius:9px;color:#aaaaaa;font-size:14px;font-weight:600;text-decoration:none}
-.scr-roles .nav-item:hover{background:rgba(255,255,255,0.05);color:#ffffff;text-decoration:none}
-.scr-roles .field:focus{border-color:#54adff !important;background:rgba(84,173,255,0.05) !important;outline:none}
-.scr-roles .btn-primary:hover{background:#0054d6}
-.scr-roles .btn-primary:disabled{opacity:.45;cursor:not-allowed;background:#0066ff}
-.scr-roles .btn-ghost:hover{border-color:#54adff}
-.scr-roles .btn-danger:hover{background:rgba(255,107,107,0.2)}
-.scr-roles .btn-danger:disabled{opacity:.4;cursor:not-allowed;background:rgba(255,107,107,0.1)}
-.scr-roles select option{background:#10213d;color:#ffffff}
-.scr-roles button:focus-visible,.scr-roles a:focus-visible,.scr-roles select:focus-visible{outline:2px solid #54adff;outline-offset:2px}
+.scr-roles a {
+  color: #54adff;
+  text-decoration: none;
+}
+.scr-roles a:hover {
+  color: #bcd6ff;
+  text-decoration: underline;
+}
+.scr-roles .nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px;
+  border-radius: 9px;
+  color: #aaaaaa;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.scr-roles .nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  text-decoration: none;
+}
+.scr-roles .field:focus {
+  border-color: #54adff !important;
+  background: rgba(84, 173, 255, 0.05) !important;
+  outline: none;
+}
+.scr-roles .btn-primary:hover {
+  background: #0054d6;
+}
+.scr-roles .btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: #0066ff;
+}
+.scr-roles .btn-ghost:hover {
+  border-color: #54adff;
+}
+.scr-roles .btn-danger:hover {
+  background: rgba(255, 107, 107, 0.2);
+}
+.scr-roles .btn-danger:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: rgba(255, 107, 107, 0.1);
+}
+.scr-roles select option {
+  background: #10213d;
+  color: #ffffff;
+}
+.scr-roles button:focus-visible,
+.scr-roles a:focus-visible,
+.scr-roles select:focus-visible {
+  outline: 2px solid #54adff;
+  outline-offset: 2px;
+}
 
-.scr-login a{color:#54adff;text-decoration:none}
-.scr-login a:hover{color:#bcd6ff;text-decoration:underline}
-.scr-login .btn-primary:hover{background:#0054d6}
-.scr-login .btn-primary:disabled{opacity:.55;cursor:not-allowed;background:#0066ff}
-.scr-login .btn-google:hover{border-color:#54adff;background:rgba(84,173,255,.08)}
-.scr-login .field:focus{border-color:#54adff !important;background:rgba(84,173,255,.05) !important;outline:none}
-.scr-login .link-btn:hover{color:#ffffff}
-.scr-login button:focus-visible,.scr-login a:focus-visible{outline:2px solid #54adff;outline-offset:2px}
+.scr-login a {
+  color: #54adff;
+  text-decoration: none;
+}
+.scr-login a:hover {
+  color: #bcd6ff;
+  text-decoration: underline;
+}
+.scr-login .btn-primary:hover {
+  background: #0054d6;
+}
+.scr-login .btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: #0066ff;
+}
+.scr-login .btn-google:hover {
+  border-color: #54adff;
+  background: rgba(84, 173, 255, 0.08);
+}
+.scr-login .field:focus {
+  border-color: #54adff !important;
+  background: rgba(84, 173, 255, 0.05) !important;
+  outline: none;
+}
+.scr-login .link-btn:hover {
+  color: #ffffff;
+}
+.scr-login button:focus-visible,
+.scr-login a:focus-visible {
+  outline: 2px solid #54adff;
+  outline-offset: 2px;
+}
 
-.scr-login-m a{color:#54adff;text-decoration:none}
+.scr-login-m a {
+  color: #54adff;
+  text-decoration: none;
+}
