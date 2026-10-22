@@ -457,7 +457,15 @@ export default function ExecutiveProfile() {
                 <button
                   type="button"
                   className="btn-ghost"
-                  onClick={removeReal}
+                  onClick={() =>
+                    setConfirm({
+                      title: "Remove your picture?",
+                      body: "Your picture will be deleted, and your initials will show instead. You can add a new one any time.",
+                      confirmLabel: "Remove picture",
+                      tone: "danger",
+                      run: removeReal,
+                    })
+                  }
                   style={{
                     padding: "11px 18px",
                     border: "1px solid #333333",
