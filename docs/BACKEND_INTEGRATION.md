@@ -13,6 +13,7 @@ SQL Editor, in this order, each file once (all are safe to run twice):
 5. `20261022_0005_executives_roles_programs.sql`
 6. `20261022_0006_analytics_audit_settings.sql`
 7. `20261022_0007_public_executives.sql`
+8. `20261022_0008_edit_executive_since.sql`
 
 Edge Functions (CLI, `--no-verify-jwt --use-api`): `forgot-password`, `admin-create-user`, `admin-reset-password`, and redeploy `sign-in`.
 

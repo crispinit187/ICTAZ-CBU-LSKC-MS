@@ -338,6 +338,7 @@ export default function ExecutivesPage() {
   const [err, setErr] = useState("");
   const [msg, setMsg] = useState("");
   const [ask, setAsk] = useState(null);
+  const [since, setSince] = useState(null); // { row, date, reason }
 
   const load = useCallback(async () => {
     const [a, b] = await Promise.all([
@@ -482,6 +483,18 @@ export default function ExecutivesPage() {
                         {r.public_display ? "Hide" : "Show"}
                       </Btn>
                       <Btn
+                        onClick={() =>
+                          setSince({
+                            row: r,
+                            date: String(r.start_date).slice(0, 10),
+                            reason: "",
+                          })
+                        }
+                        style={{ marginRight: 8 }}
+                      >
+                        Edit since
+                      </Btn>
+                      <Btn
                         kind="decline"
                         onClick={() =>
                           setAsk({
@@ -528,6 +541,117 @@ export default function ExecutivesPage() {
         onChanged={done}
         onError={setErr}
       />
+      {since && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Edit since date"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(0,0,0,0.7)",
+            padding: 20,
+          }}
+        >
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const x = await rpc("update_executive_since", {
+                p_profile: since.row.profile_id,
+                p_start: since.date,
+                p_reason: since.reason,
+              });
+              if (x.error) setErr(x.error);
+              else done("Updated the since date for " + since.row.name + ".");
+              setSince(null);
+            }}
+            style={{
+              ...card,
+              background: "#0d0d0d",
+              width: "100%",
+              maxWidth: 440,
+            }}
+          >
+            <h2 style={{ margin: "0 0 6px", fontSize: 20 }}>Edit since date</h2>
+            <p style={{ margin: "0 0 16px", color: T.muted, fontSize: 14 }}>
+              {since.row.name}, {since.row.position}. This fixes a wrong date.
+              For a real change of position, end this profile and add a new one.
+            </p>
+            <label style={{ display: "block", marginBottom: 12 }}>
+              <span
+                style={{
+                  display: "block",
+                  marginBottom: 6,
+                  color: T.muted,
+                  fontSize: 13,
+                }}
+              >
+                Since
+              </span>
+              <input
+                aria-label="Since"
+                type="date"
+                required
+                max={new Date().toISOString().slice(0, 10)}
+                style={{ ...input, width: "100%" }}
+                value={since.date}
+                onChange={(e) => setSince({ ...since, date: e.target.value })}
+              />
+            </label>
+            <label style={{ display: "block" }}>
+              <span
+                style={{
+                  display: "block",
+                  marginBottom: 6,
+                  color: T.muted,
+                  fontSize: 13,
+                }}
+              >
+                Reason (recorded in the audit log)
+              </span>
+              <input
+                aria-label="Reason"
+                required
+                minLength={3}
+                style={{ ...input, width: "100%" }}
+                value={since.reason}
+                onChange={(e) => setSince({ ...since, reason: e.target.value })}
+              />
+            </label>
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                marginTop: 18,
+                justifyContent: "flex-end",
+              }}
+            >
+              <Btn onClick={() => setSince(null)}>Cancel</Btn>
+              <button
+                type="submit"
+                className="btn-primary"
+                style={{
+                  padding: "10px 16px",
+                  border: "none",
+                  borderRadius: 8,
+                  background: T.blue,
+                  color: "#fff",
+                  fontFamily: "inherit",
+                  fontSize: 14,
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
       {ask && (
         <ConfirmDialog
           cfg={ask}

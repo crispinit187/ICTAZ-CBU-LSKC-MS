@@ -168,6 +168,11 @@ export default function AnalyticsPage() {
             <h2 style={{ margin: "0 0 16px", fontSize: 18 }}>
               Members by attendance
             </h2>
+            {!d.sessions_count && (
+              <p style={{ margin: "0 0 14px", color: T.amber, fontSize: 13 }}>
+                No sessions have been held in this semester yet.
+              </p>
+            )}
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
               {[
                 ["80% and above", bands.high, T.green],

@@ -484,9 +484,10 @@ begin
      where m.status = 'Active'
      group by m.id
   ), rated as (
-    select case when (select count(*) from ses) - excused > 0
-                then 100.0 * present / ((select count(*) from ses) - excused) else 0 end as r
+    -- a member with nothing to measure (no sessions yet, or all excused) is left out of the bands
+    select 100.0 * present / ((select count(*) from ses) - excused) as r
       from per
+     where (select count(*) from ses) - excused > 0
   )
   select jsonb_build_object(
            'high', count(*) filter (where r >= 80),

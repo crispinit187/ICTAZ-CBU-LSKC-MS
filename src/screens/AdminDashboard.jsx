@@ -805,6 +805,18 @@ const renderScreen = (v, props) => (
           >
             Members by semester attendance rate. Visible to staff only.
           </p>
+          {v.bands.high + v.bands.good + v.bands.fair + v.bands.low === 0 && (
+            <p
+              style={{
+                margin: "-8px 0 14px",
+                color: "#ffd98a",
+                fontSize: "13px",
+              }}
+            >
+              No sessions have been held this semester yet, so there is nothing
+              to show.
+            </p>
+          )}
           <div
             style={{
               display: "flex",

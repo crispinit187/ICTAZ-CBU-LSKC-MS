@@ -109,7 +109,7 @@ begin
       left join public.attendance_records a on a.member_id = m.id and a.session_id = any(v_ids)
      where m.status = 'Active' group by m.id
   ), rated as (
-    select case when v_n - excused > 0 then 100.0 * present / (v_n - excused) else 0 end as r from per
+    select 100.0 * present / (v_n - excused) as r from per where v_n - excused > 0
   )
   select jsonb_build_object('high', count(*) filter (where r >= 80), 'good', count(*) filter (where r >= 60 and r < 80),
                             'fair', count(*) filter (where r >= 40 and r < 60), 'low', count(*) filter (where r < 40))
