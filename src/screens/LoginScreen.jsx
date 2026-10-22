@@ -47,6 +47,16 @@ const renderDesktop = (v, props) => (
         }}
       >
         <a
+          href={import.meta.env.BASE_URL + "executives"}
+          onClick={(e) => {
+            e.preventDefault();
+            props.onExecutives && props.onExecutives();
+          }}
+          style={{ color: "#54adff" }}
+        >
+          Our executive
+        </a>
+        <a
           href={import.meta.env.BASE_URL + "terms"}
           onClick={(e) => {
             e.preventDefault();
@@ -1237,6 +1247,24 @@ const renderMobile = (v, props) => (
           style={{ fontWeight: "bold" }}
         >
           Create an account
+        </a>
+      </p>
+      <p
+        style={{
+          margin: "14px 0 0",
+          textAlign: "center",
+          fontSize: "14px",
+          fontWeight: "bold",
+        }}
+      >
+        <a
+          href={import.meta.env.BASE_URL + "executives"}
+          onClick={(e) => {
+            e.preventDefault();
+            props.onExecutives && props.onExecutives();
+          }}
+        >
+          Meet our executive
         </a>
       </p>
       <p

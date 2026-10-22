@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { live, rpc } from "../lib/api.js";
 
 const SAMPLE = [
@@ -40,6 +41,17 @@ export default function PublicExecutives() {
       }}
     >
       <main style={{ maxWidth: 760, margin: "0 auto" }}>
+        <Link
+          to="/login"
+          style={{
+            display: "inline-block",
+            marginBottom: 28,
+            fontWeight: "bold",
+            fontSize: 14,
+          }}
+        >
+          Back to sign in
+        </Link>
         <div
           style={{
             color: "#54adff",

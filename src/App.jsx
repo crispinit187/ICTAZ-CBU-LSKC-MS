@@ -115,6 +115,7 @@ function Login() {
       onForgot={(id) =>
         nav("/forgot-password" + (id ? "?id=" + encodeURIComponent(id) : ""))
       }
+      onExecutives={() => nav("/executives")}
       onTerms={() => nav("/terms")}
       onPrivacy={() => nav("/privacy")}
     />
