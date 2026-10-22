@@ -145,6 +145,7 @@ const renderScreen = (v, props) => (
         </>
       )}
       <section
+        className="adm-tiles"
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(4, minmax(0, 1fr))",

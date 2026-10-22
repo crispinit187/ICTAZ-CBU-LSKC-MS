@@ -125,7 +125,10 @@ export default function AnalyticsPage() {
       {err && <Notice tone="error">{err}</Notice>}
       {d && (
         <>
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+          <div
+            className="adm-tiles"
+            style={{ display: "flex", gap: 16, flexWrap: "wrap" }}
+          >
             <Tile label="ACTIVE MEMBERS" value={d.active_members} />
             <Tile
               label="SESSIONS HELD"
