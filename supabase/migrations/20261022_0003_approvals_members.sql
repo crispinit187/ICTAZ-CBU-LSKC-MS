@@ -247,6 +247,12 @@ begin
 end;
 $$;
 
+-- The date a person became a member. Starts as the registration date; an Administrator can correct it.
+alter table public.members add column if not exists member_since date;
+update public.members set member_since = created_at::date where member_since is null;
+alter table public.members alter column member_since set default current_date;
+alter table public.members alter column member_since set not null;
+
 create or replace function public.get_member(p_id uuid)
 returns jsonb
 language plpgsql
@@ -276,7 +282,7 @@ begin
     'phone', case when v_full then m.phone end,
     'email_verified', m.email_verified_at is not null,
     'is_bootstrap', m.is_bootstrap,
-    'created_at', m.created_at,
+    'created_at', m.created_at, 'member_since', m.member_since,
     'roles', (select coalesce(jsonb_agg(r.name order by r.name), '[]'::jsonb)
                 from public.user_roles ur join public.roles r on r.id = ur.role_id
                where ur.user_id = m.id and ur.is_active),

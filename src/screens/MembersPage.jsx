@@ -41,6 +41,7 @@ function Detail({ id, onClose, onChanged, canDo }) {
   const [msg, setMsg] = useState("");
   const [form, setForm] = useState(null);
   const [num, setNum] = useState("");
+  const [since, setSince] = useState("");
   const [ask, setAsk] = useState(null);
   const [temp, setTemp] = useState("");
 
@@ -173,6 +174,16 @@ function Detail({ id, onClose, onChanged, canDo }) {
             <div style={{ marginTop: 4, color: T.muted, fontSize: 14 }}>
               {m.student_number}
             </div>
+            {m.member_since && (
+              <div style={{ marginTop: 4, color: T.dim, fontSize: 13 }}>
+                Member since{" "}
+                {new Date(m.member_since).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </div>
+            )}
             <div
               style={{
                 marginTop: 8,
@@ -282,6 +293,54 @@ function Detail({ id, onClose, onChanged, canDo }) {
           {!canDo.edit && (
             <div style={{ color: T.dim, fontSize: 13 }}>
               Your role sees limited details only.
+            </div>
+          )}
+          {canDo.edit && (
+            <div>
+              <span
+                style={{
+                  display: "block",
+                  marginBottom: 6,
+                  color: T.muted,
+                  fontSize: 13,
+                }}
+              >
+                Change member since
+              </span>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  aria-label="New member since date"
+                  type="date"
+                  max={new Date().toISOString().slice(0, 10)}
+                  style={{ ...input, flex: 1, minWidth: 0 }}
+                  value={since}
+                  onChange={(e) => setSince(e.target.value)}
+                />
+                <Btn
+                  disabled={!since}
+                  onClick={() =>
+                    setAsk({
+                      title: "Change member since date?",
+                      body: "The member since date becomes " + since + ".",
+                      reasonLabel: "Reason (recorded in the audit log)",
+                      confirmLabel: "Change date",
+                      tone: "warning",
+                      run: (reason) =>
+                        act(
+                          () =>
+                            rpc("change_member_since", {
+                              p_id: id,
+                              p_date: since,
+                              p_reason: reason,
+                            }),
+                          "Member since date changed.",
+                        ).then(() => setSince("")),
+                    })
+                  }
+                >
+                  Change
+                </Btn>
+              </div>
             </div>
           )}
           {canDo.number && !m.is_bootstrap && (
