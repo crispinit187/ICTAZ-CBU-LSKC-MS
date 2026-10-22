@@ -10,7 +10,7 @@ import {
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import { Splash } from "../auth/guards.jsx";
 import AccountCards from "../components/AccountCards.jsx";
-import { useAuth } from "../auth/AuthProvider.jsx";
+import { homeFor, useAuth } from "../auth/AuthProvider.jsx";
 import { live, rpc } from "../lib/api.js";
 
 // Sample data for the design demo. The real values come from the member record and executive profile.
@@ -254,11 +254,21 @@ export default function ExecutiveProfile() {
     </div>
   );
 
+  const home = real ? homeFor(auth.ctx) : "/scan";
   if (real && !prof) return <Splash />;
 
   return (
     <AuthPage width={720} right={signOut}>
-      <BackLink label="Back to scan" to="/scan" />
+      <BackLink
+        label={
+          home === "/admin"
+            ? "Back to dashboard"
+            : home === "/registrar"
+              ? "Back to marking"
+              : "Back to scan"
+        }
+        to={home}
+      />
       <Eyebrow>MY ACCOUNT</Eyebrow>
       <h1
         style={{
