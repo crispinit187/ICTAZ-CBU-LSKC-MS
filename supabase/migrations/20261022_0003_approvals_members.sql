@@ -178,6 +178,19 @@ begin
 end;
 $$;
 
+create or replace function public.pending_count()
+returns integer
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+begin
+  perform public._need('account.approve');
+  return (select count(*)::integer from public.members where status = 'Pending');
+end;
+$$;
+
 -- ---------------------------------------------------------------- members
 -- Registrars see a short view (no e-mail or phone). Anyone who can edit details sees everything.
 create or replace function public.list_members(
@@ -531,7 +544,7 @@ begin
     'reopen_registration(uuid)', 'list_members(text, text, integer, integer)', 'get_member(uuid)',
     'set_member_status(uuid, text, text)',
     'update_member_details(uuid, text, text, text, smallint, smallint)',
-    'change_student_number(uuid, text, text)', 'admin_dashboard()'
+    'change_student_number(uuid, text, text)', 'admin_dashboard()', 'pending_count()'
   ] loop
     execute format('revoke all on function public.%s from public, anon', f);
     execute format('grant execute on function public.%s to authenticated', f);

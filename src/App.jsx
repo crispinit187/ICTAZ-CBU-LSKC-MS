@@ -11,7 +11,9 @@ import { gateOf, homeFor, useAuth } from "./auth/AuthProvider.jsx";
 import { GateOnly, Protected } from "./auth/guards.jsx";
 import { demoOpen } from "./lib/supabase.js";
 import LoginScreen from "./screens/LoginScreen.jsx";
-import AdminDashboard from "./screens/AdminDashboard.jsx";
+import AdminDashboardPage from "./screens/AdminDashboardPage.jsx";
+import ApprovalsPage from "./screens/ApprovalsPage.jsx";
+import MembersPage from "./screens/MembersPage.jsx";
 import RegistrarMarking from "./screens/RegistrarMarking.jsx";
 import QrDisplay from "./screens/QrDisplay.jsx";
 import MemberScan from "./screens/MemberScan.jsx";
@@ -203,7 +205,23 @@ function AppRoutes({ location }) {
         path="/admin"
         element={
           <Protected need="analytics.view">
-            <Routed as={AdminDashboard} />
+            <AdminDashboardPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/admin/approvals"
+        element={
+          <Protected need="account.approve">
+            <ApprovalsPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/admin/members"
+        element={
+          <Protected need="member.view">
+            <MembersPage />
           </Protected>
         }
       />

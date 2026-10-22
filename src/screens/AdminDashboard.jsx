@@ -1,5 +1,7 @@
 import React from "react";
+import { actionText, ago } from "../lib/api.js";
 import ConfirmDialog, { UnsavedGuard } from "../components/ConfirmDialog.jsx";
+import { AdminSidebar, isBuilt } from "../components/admin/AdminShell.jsx";
 
 const renderScreen = (v, props) => (
   <div
@@ -13,128 +15,7 @@ const renderScreen = (v, props) => (
       fontFamily: "Arial, Helvetica, sans-serif",
     }}
   >
-    <aside
-      style={{
-        flex: "0 0 248px",
-        boxSizing: "border-box",
-        padding: "22px 16px",
-        background: "#000000",
-        borderRight: "1px solid #1c1c1c",
-        display: "flex",
-        flexDirection: "column",
-        gap: "6px",
-      }}
-    >
-      <a
-        href="#"
-        style={{
-          padding: "4px 14px 22px",
-          fontSize: "21px",
-          fontWeight: "bold",
-          letterSpacing: "-0.5px",
-          color: "#ffffff",
-        }}
-      >
-        {"ICTAZ "}
-        <span style={{ color: "#0066ff" }}>CBU</span>
-      </a>
-      <div
-        style={{
-          padding: "0 14px 8px",
-          color: "#75859e",
-          fontSize: "11px",
-          fontWeight: "bold",
-          letterSpacing: "2px",
-        }}
-      >
-        MANAGE
-      </div>
-      <a
-        className="nav-item"
-        href="#"
-        style={{ background: "rgba(0,102,255,0.14)", color: "#54adff" }}
-      >
-        <span>Dashboard</span>
-      </a>
-      <a className="nav-item" href="#">
-        <span>Sessions</span>
-      </a>
-      <a className="nav-item" href="#">
-        <span>Members</span>
-      </a>
-      <a className="nav-item" href="#">
-        <span>Approvals</span>
-        <span
-          style={{
-            minWidth: "22px",
-            padding: "2px 7px",
-            boxSizing: "border-box",
-            textAlign: "center",
-            borderRadius: "20px",
-            background: "#0066ff",
-            color: "#ffffff",
-            fontSize: "12px",
-            fontWeight: "bold",
-          }}
-        >
-          {v.pendingCount}
-        </span>
-      </a>
-      <a className="nav-item" href="#">
-        <span>Executives</span>
-      </a>
-      <a className="nav-item" href="#">
-        <span>Programs</span>
-      </a>
-      <div
-        style={{
-          padding: "18px 14px 8px",
-          color: "#75859e",
-          fontSize: "11px",
-          fontWeight: "bold",
-          letterSpacing: "2px",
-        }}
-      >
-        INSIGHTS
-      </div>
-      <a className="nav-item" href="#">
-        <span>Analytics</span>
-      </a>
-      <a className="nav-item" href="#">
-        <span>Reports and exports</span>
-      </a>
-      <a className="nav-item" href="#">
-        <span>Audit log</span>
-      </a>
-      <div style={{ flexGrow: "1" }}></div>
-      <div
-        style={{
-          padding: "14px",
-          borderRadius: "12px",
-          background: "rgba(255,255,255,0.035)",
-          border: "1px solid rgba(255,255,255,0.08)",
-        }}
-      >
-        <div style={{ fontSize: "14px", fontWeight: "bold" }}>
-          Sample Administrator
-        </div>
-        <div style={{ marginTop: "3px", color: "#8a99b3", fontSize: "12px" }}>
-          Administrator · Executive
-        </div>
-        <a
-          href="#"
-          onClick={v.signOut}
-          style={{
-            display: "inline-block",
-            marginTop: "10px",
-            fontSize: "13px",
-            fontWeight: "600",
-          }}
-        >
-          Sign out
-        </a>
-      </div>
-    </aside>
+    <AdminSidebar active="dashboard" pending={v.sidebarPending} />
     <main
       style={{
         flex: "1 1 680px",
@@ -160,8 +41,7 @@ const renderScreen = (v, props) => (
             Dashboard
           </h1>
           <p style={{ margin: "6px 0 0", color: "#aebfda", fontSize: "14px" }}>
-            Chapter overview for the current semester. Sample data for the
-            design demo.
+            {v.subtitle}
           </p>
         </div>
         <div
@@ -221,26 +101,30 @@ const renderScreen = (v, props) => (
               fontSize: "14px",
             }}
           >
-            <option>Semester 1, 2026/27</option>
-            <option>Semester 2, 2025/26</option>
+            {v.semesters.map((o) => (
+              <option key={o.id}>{o.name}</option>
+            ))}
           </select>
-          <button
-            className="btn-primary"
-            type="button"
-            style={{
-              padding: "12px 20px",
-              border: "none",
-              borderRadius: "8px",
-              background: "#0066ff",
-              color: "#ffffff",
-              fontFamily: "inherit",
-              fontSize: "14px",
-              fontWeight: "bold",
-              cursor: "pointer",
-            }}
-          >
-            Create session
-          </button>
+          {v.showSessions && (
+            <button
+              className="btn-primary"
+              type="button"
+              onClick={() => v.go("/admin/sessions")}
+              style={{
+                padding: "12px 20px",
+                border: "none",
+                borderRadius: "8px",
+                background: "#0066ff",
+                color: "#ffffff",
+                fontFamily: "inherit",
+                fontSize: "14px",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              Create session
+            </button>
+          )}
         </div>
       </header>
       {v.toast && (
@@ -293,10 +177,10 @@ const renderScreen = (v, props) => (
               letterSpacing: "-1.5px",
             }}
           >
-            412
+            {v.activeMembers}
           </div>
           <div style={{ marginTop: "6px", color: "#8a99b3", fontSize: "13px" }}>
-            18 joined this semester
+            {v.joinedText}
           </div>
         </div>
         <div
@@ -357,10 +241,10 @@ const renderScreen = (v, props) => (
               letterSpacing: "-1.5px",
             }}
           >
-            10
+            {v.sessionsCount}
           </div>
           <div style={{ marginTop: "6px", color: "#8a99b3", fontSize: "13px" }}>
-            1 open now, 1 scheduled
+            {v.sessionsText}
           </div>
         </div>
         <div
@@ -389,7 +273,7 @@ const renderScreen = (v, props) => (
               letterSpacing: "-1.5px",
             }}
           >
-            74.6%
+            {v.avgText}
           </div>
           <div style={{ marginTop: "6px", color: "#8a99b3", fontSize: "13px" }}>
             Excused absences not counted
@@ -647,14 +531,14 @@ const renderScreen = (v, props) => (
               letterSpacing: "-0.5px",
             }}
           >
-            Weekly Chapter Meeting
+            {v.openTitle}
           </h2>
           <div
             style={{ color: "#aebfda", fontSize: "13px", lineHeight: "1.6" }}
           >
-            Today · 16:00 to 17:30 · Main Hall
+            {v.openWhen}
             <br />
-            Facilitators: 2 members, 1 guest
+            {v.openFac}
           </div>
           <div
             style={{
@@ -696,49 +580,52 @@ const renderScreen = (v, props) => (
             ></div>
           </div>
           <div style={{ marginTop: "8px", color: "#8a99b3", fontSize: "12px" }}>
-            {v.livePct}% of 412 active members · updating live
+            {v.livePct}% of {v.activeMembers} active members · updating live
           </div>
           <div style={{ flexGrow: "1", minHeight: "20px" }}></div>
-          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-            <button
-              className="btn-primary"
-              type="button"
-              style={{
-                flex: "1 1 140px",
-                padding: "12px 16px",
-                border: "none",
-                borderRadius: "8px",
-                background: "#0066ff",
-                color: "#ffffff",
-                fontFamily: "inherit",
-                fontSize: "14px",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              Open QR display
-            </button>
-            <button
-              className="btn-ghost"
-              onClick={v.closeWindow}
-              disabled={v.windowClosed}
-              type="button"
-              style={{
-                flex: "1 1 120px",
-                padding: "12px 16px",
-                border: "1px solid #333333",
-                borderRadius: "8px",
-                background: "transparent",
-                color: "#ffffff",
-                fontFamily: "inherit",
-                fontSize: "14px",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              {v.closeLabel}
-            </button>
-          </div>
+          {v.showOpenButtons && (
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              <button
+                className="btn-primary"
+                type="button"
+                onClick={() => v.go("/display")}
+                style={{
+                  flex: "1 1 140px",
+                  padding: "12px 16px",
+                  border: "none",
+                  borderRadius: "8px",
+                  background: "#0066ff",
+                  color: "#ffffff",
+                  fontFamily: "inherit",
+                  fontSize: "14px",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                }}
+              >
+                Open QR display
+              </button>
+              <button
+                className="btn-ghost"
+                onClick={v.closeWindow}
+                disabled={v.windowClosed}
+                type="button"
+                style={{
+                  flex: "1 1 120px",
+                  padding: "12px 16px",
+                  border: "1px solid #333333",
+                  borderRadius: "8px",
+                  background: "transparent",
+                  color: "#ffffff",
+                  fontFamily: "inherit",
+                  fontSize: "14px",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                }}
+              >
+                {v.closeLabel}
+              </button>
+            </div>
+          )}
         </div>
       </section>
       <section style={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
@@ -765,7 +652,14 @@ const renderScreen = (v, props) => (
             <h2 style={{ margin: "0", fontSize: "18px" }}>
               Registrations waiting for approval
             </h2>
-            <a href="#" style={{ fontSize: "13px", fontWeight: "600" }}>
+            <a
+              href="#approvals"
+              onClick={(e) => {
+                e.preventDefault();
+                v.go("/admin/approvals");
+              }}
+              style={{ fontSize: "13px", fontWeight: "600" }}
+            >
               {"View all "}
               {v.pendingCount}
             </a>
@@ -889,7 +783,7 @@ const renderScreen = (v, props) => (
                   fontSize: "14px",
                 }}
               >
-                No registrations on this screen. Everyone is up to date.
+                {v.queueEmptyText}
               </div>
             </>
           )}
@@ -920,10 +814,18 @@ const renderScreen = (v, props) => (
               overflow: "hidden",
             }}
           >
-            <div style={{ flex: "188 1 0", background: "#3ddc97" }}></div>
-            <div style={{ flex: "121 1 0", background: "#54adff" }}></div>
-            <div style={{ flex: "64 1 0", background: "#ffb020" }}></div>
-            <div style={{ flex: "39 1 0", background: "#ff6b6b" }}></div>
+            <div
+              style={{ flex: `${v.bands.high} 1 0`, background: "#3ddc97" }}
+            ></div>
+            <div
+              style={{ flex: `${v.bands.good} 1 0`, background: "#54adff" }}
+            ></div>
+            <div
+              style={{ flex: `${v.bands.fair} 1 0`, background: "#ffb020" }}
+            ></div>
+            <div
+              style={{ flex: `${v.bands.low} 1 0`, background: "#ff6b6b" }}
+            ></div>
           </div>
           <div
             style={{
@@ -952,7 +854,7 @@ const renderScreen = (v, props) => (
                 ></span>
                 80% and above
               </span>
-              <strong>188</strong>
+              <strong>{v.bands.high}</strong>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span
@@ -972,7 +874,7 @@ const renderScreen = (v, props) => (
                 ></span>
                 60% to 79%
               </span>
-              <strong>121</strong>
+              <strong>{v.bands.good}</strong>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span
@@ -992,7 +894,7 @@ const renderScreen = (v, props) => (
                 ></span>
                 40% to 59%
               </span>
-              <strong>64</strong>
+              <strong>{v.bands.fair}</strong>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span
@@ -1012,7 +914,7 @@ const renderScreen = (v, props) => (
                 ></span>
                 Below 40%
               </span>
-              <strong>39</strong>
+              <strong>{v.bands.low}</strong>
             </div>
           </div>
           <p
@@ -1085,23 +987,38 @@ const renderScreen = (v, props) => (
               </React.Fragment>
             ))}
           </div>
-          <div
-            style={{
-              marginTop: "18px",
-              padding: "12px 14px",
-              borderRadius: "10px",
-              background: "rgba(255,176,32,0.08)",
-              border: "1px solid rgba(255,176,32,0.35)",
-              color: "#ffd98a",
-              fontSize: "13px",
-              lineHeight: "1.5",
-            }}
-          >
-            {"3 new program spellings need review before they join a group. "}
-            <a href="#" style={{ fontWeight: "bold" }}>
-              Review
-            </a>
-          </div>
+          {v.reviewCount > 0 && (
+            <div
+              style={{
+                marginTop: "18px",
+                padding: "12px 14px",
+                borderRadius: "10px",
+                background: "rgba(255,176,32,0.08)",
+                border: "1px solid rgba(255,176,32,0.35)",
+                color: "#ffd98a",
+                fontSize: "13px",
+                lineHeight: "1.5",
+              }}
+            >
+              {v.reviewCount +
+                (v.reviewCount === 1
+                  ? " new program spelling needs"
+                  : " new program spellings need") +
+                " review before they join a group. "}
+              {isBuilt("programs") && (
+                <a
+                  href="#programs"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    v.go("/admin/programs");
+                  }}
+                  style={{ fontWeight: "bold" }}
+                >
+                  Review
+                </a>
+              )}
+            </div>
+          )}
         </div>
         <div
           style={{
@@ -1122,9 +1039,18 @@ const renderScreen = (v, props) => (
             }}
           >
             <h2 style={{ margin: "0", fontSize: "18px" }}>Recent activity</h2>
-            <a href="#" style={{ fontSize: "13px", fontWeight: "600" }}>
-              Open audit log
-            </a>
+            {isBuilt("audit") && (
+              <a
+                href="#audit"
+                onClick={(e) => {
+                  e.preventDefault();
+                  v.go("/admin/audit");
+                }}
+                style={{ fontSize: "13px", fontWeight: "600" }}
+              >
+                Open audit log
+              </a>
+            )}
           </div>
           <div
             style={{
@@ -1182,42 +1108,44 @@ const renderScreen = (v, props) => (
           </div>
         </div>
       </section>
-      <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-        <button
-          className="btn-ghost"
-          type="button"
-          style={{
-            padding: "12px 20px",
-            border: "1px solid #333333",
-            borderRadius: "8px",
-            background: "transparent",
-            color: "#ffffff",
-            fontFamily: "inherit",
-            fontSize: "14px",
-            fontWeight: "bold",
-            cursor: "pointer",
-          }}
-        >
-          Export attendance (CSV)
-        </button>
-        <button
-          className="btn-ghost"
-          type="button"
-          style={{
-            padding: "12px 20px",
-            border: "1px solid #333333",
-            borderRadius: "8px",
-            background: "transparent",
-            color: "#ffffff",
-            fontFamily: "inherit",
-            fontSize: "14px",
-            fontWeight: "bold",
-            cursor: "pointer",
-          }}
-        >
-          Export report (Excel)
-        </button>
-      </div>
+      {v.showExport && (
+        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+          <button
+            className="btn-ghost"
+            type="button"
+            style={{
+              padding: "12px 20px",
+              border: "1px solid #333333",
+              borderRadius: "8px",
+              background: "transparent",
+              color: "#ffffff",
+              fontFamily: "inherit",
+              fontSize: "14px",
+              fontWeight: "bold",
+              cursor: "pointer",
+            }}
+          >
+            Export attendance (CSV)
+          </button>
+          <button
+            className="btn-ghost"
+            type="button"
+            style={{
+              padding: "12px 20px",
+              border: "1px solid #333333",
+              borderRadius: "8px",
+              background: "transparent",
+              color: "#ffffff",
+              fontFamily: "inherit",
+              fontSize: "14px",
+              fontWeight: "bold",
+              cursor: "pointer",
+            }}
+          >
+            Export report (Excel)
+          </button>
+        </div>
+      )}
     </main>
   </div>
 );
@@ -1288,7 +1216,25 @@ class Screen extends React.Component {
   componentWillUnmount() {
     if (this.timer) clearInterval(this.timer);
   }
-  act(r, approved) {
+  act(r, approved, reason) {
+    const real = this.props.real;
+    if (real) {
+      const call = approved
+        ? real.onApprove(r.id)
+        : real.onDecline(r.id, reason);
+      call.then((err) =>
+        this.setState({
+          toast: err
+            ? err
+            : approved
+              ? "Approved " +
+                r.name +
+                ". They have been emailed and can sign in now."
+              : "Declined " + r.name + ". The decision is in the audit log.",
+        }),
+      );
+      return;
+    }
     const q = this.state.queue.filter((x) => x.id !== r.id);
     this.setState({
       queue: q,
@@ -1299,7 +1245,100 @@ class Screen extends React.Component {
           ". The reason has been emailed to them and the decision is in the audit log.",
     });
   }
+  realVals() {
+    const s = this.state;
+    const real = this.props.real;
+    const d = real.data || {};
+    const open = d.open || null;
+    const bars = (d.bars || []).map((b, i) => ({
+      n: String(i + 1),
+      title: b.title,
+      date: b.date_label,
+      rate: Number(b.rate),
+      present: Number(b.present),
+      h: Math.round(Number(b.rate) * 2.2),
+      tipBottom: Math.round(Number(b.rate) * 2.2) + 8,
+      bg: s.hover === i ? "#54adff" : "#0066ff",
+      hover: s.hover === i,
+      enter: () => this.setState({ hover: i }),
+      leave: () => this.setState({ hover: -1 }),
+    }));
+    const queue = (real.pending || []).slice(0, 5).map((r) => ({
+      id: r.id,
+      name: r.name,
+      no: r.student_number,
+      email: r.email,
+      method: r.method === "google" ? "Google" : "Password",
+      prog: r.program || "—",
+      year: (r.year_of_study || "—") + "," + (r.semester_of_study || "—"),
+    }));
+    const active = Number(d.active_members || 0);
+    const present = open ? Number(open.present) : 0;
+    const pct = active ? Math.round((present / active) * 1000) / 10 : 0;
+    const when = open
+      ? new Date(open.start_at).toLocaleString("en-GB", {
+          weekday: "short",
+          day: "2-digit",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        }) + (open.venue ? " · " + open.venue : "")
+      : "";
+    const fm = open ? Number(open.facilitator_members) : 0;
+    const fg = open ? Number(open.facilitator_guests) : 0;
+    return {
+      bars,
+      queue,
+      queueEmpty: queue.length === 0,
+      queueEmptyText: "No registrations are waiting. Everyone is up to date.",
+      pendingCount: Number(d.pending_count || 0),
+      sidebarPending: Number(d.pending_count || 0),
+      toast: s.toast,
+      livePresent: present,
+      livePct: pct,
+      liveWidth: Math.min(100, pct),
+      programs: d.programs || [],
+      activity: (d.activity || []).map((a) => ({
+        text: actionText(a.action),
+        who: a.who,
+        when: ago(a.at),
+      })),
+      subtitle: d.semester
+        ? "Chapter overview for " + d.semester.name + "."
+        : "Chapter overview. No current semester is set yet.",
+      semesters:
+        d.semesters && d.semesters.length
+          ? d.semesters
+          : [{ id: "-", name: "No semester set" }],
+      activeMembers: active,
+      joinedText: Number(d.joined_this_semester || 0) + " joined this semester",
+      sessionsCount: Number(d.sessions_count || 0),
+      sessionsText:
+        Number(d.sessions_open || 0) +
+        " open now, " +
+        Number(d.sessions_scheduled || 0) +
+        " scheduled",
+      avgText: Number(d.average_rate || 0) + "%",
+      openTitle: open ? open.title : "No session is open",
+      openWhen: open ? when : "Open a session to start taking attendance.",
+      openFac: open
+        ? "Facilitators: " +
+          fm +
+          (fm === 1 ? " member, " : " members, ") +
+          fg +
+          (fg === 1 ? " guest" : " guests")
+        : "",
+      bands: d.bands || { high: 0, good: 0, fair: 0, low: 0 },
+      reviewCount: Number(d.review_programs || 0),
+      showSessions: isBuilt("sessions"),
+      showOpenButtons: !!open && isBuilt("sessions"),
+      showExport: isBuilt("reports"),
+      windowOpen: !!open,
+    };
+  }
+
   renderVals() {
+    if (this.props.real) return this.realVals();
     const s = this.state;
     const data = [
       ["Orientation", "03 Feb", 69],
@@ -1338,6 +1377,28 @@ class Screen extends React.Component {
       queue: queue,
       queueEmpty: s.queue.length === 0,
       pendingCount: s.queue.length + 2,
+      sidebarPending: s.queue.length + 2,
+      queueEmptyText:
+        "No registrations on this screen. Everyone is up to date.",
+      subtitle:
+        "Chapter overview for the current semester. Sample data for the design demo.",
+      semesters: [
+        { id: 1, name: "Semester 1, 2026/27" },
+        { id: 2, name: "Semester 2, 2025/26" },
+      ],
+      activeMembers: 412,
+      joinedText: "18 joined this semester",
+      sessionsCount: 10,
+      sessionsText: "1 open now, 1 scheduled",
+      avgText: "74.6%",
+      openTitle: "Weekly Chapter Meeting",
+      openWhen: "Today · 16:00 to 17:30 · Main Hall",
+      openFac: "Facilitators: 2 members, 1 guest",
+      bands: { high: 188, good: 121, fair: 64, low: 39 },
+      reviewCount: 3,
+      showSessions: true,
+      showOpenButtons: true,
+      showExport: true,
       toast: s.toast,
       livePresent: s.present,
       livePct: pct,
@@ -1388,6 +1449,7 @@ class Screen extends React.Component {
 
   render() {
     const v = this.renderVals();
+    v.go = (to) => this.props.onNavigate && this.props.onNavigate(to);
     const unsaved = false;
     v.signOut = (e) => {
       if (e && e.preventDefault) e.preventDefault();
@@ -1402,7 +1464,9 @@ class Screen extends React.Component {
         run: () => this.props.onSignOut && this.props.onSignOut(),
       });
     };
-    v.windowClosed = !!this.state.windowClosed;
+    v.windowClosed = this.props.real
+      ? !v.windowOpen
+      : !!this.state.windowClosed;
     v.closeLabel = v.windowClosed ? "Window closed" : "Close window";
     v.badgeBg = v.windowClosed
       ? "rgba(255,255,255,0.06)"
@@ -1425,6 +1489,7 @@ class Screen extends React.Component {
           }),
       });
     v.queue.forEach((q) => {
+      q.approve = () => this.act(q, true);
       q.decline = () =>
         this.ask({
           title: "Decline " + q.name + "?",
@@ -1432,7 +1497,7 @@ class Screen extends React.Component {
           reasonLabel: "Reason (sent to the member)",
           confirmLabel: "Decline registration",
           tone: "danger",
-          run: () => this.act(q, false),
+          run: (reason) => this.act(q, false, reason),
         });
     });
     const c = this.state.confirm;
