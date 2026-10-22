@@ -266,7 +266,7 @@ export function AdminSidebar({ active, pending }) {
                 tone: "info",
                 run: async () => {
                   await auth.signOut();
-                  nav("/login");
+                  nav("/login", { replace: true });
                 },
               });
             }}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Navigate,
   Route,
@@ -162,7 +162,7 @@ function Routed({ as: Comp, ...rest }) {
   const auth = useAuth();
   const out = async () => {
     await auth.signOut();
-    nav("/login");
+    nav("/login", { replace: true });
   };
   return <Comp {...rest} onSignOut={out} />;
 }
@@ -177,6 +177,10 @@ export default function App() {
   const location = useLocation();
   const [shown, setShown] = useState(location);
   const [phase, setPhase] = useState("in");
+  // Always aim for the newest location, so a burst of page changes (for example when signing out)
+  // can never leave the screen stuck half way through the fade.
+  const latest = useRef(location);
+  latest.current = location;
   useEffect(() => {
     if (location.pathname === shown.pathname || reducedMotion()) {
       setShown(location);
@@ -185,11 +189,18 @@ export default function App() {
     }
     setPhase("out");
     const t = setTimeout(() => {
-      setShown(location);
+      setShown(latest.current);
       setPhase("in");
       window.scrollTo(0, 0);
     }, 150);
     return () => clearTimeout(t);
+    // only a change of page restarts the fade; a repeat visit to the same page does not
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+  // same page, new address details (such as ?demo=): update straight away
+  useEffect(() => {
+    if (location.pathname === shown.pathname && location !== shown)
+      setShown(location);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
   return (

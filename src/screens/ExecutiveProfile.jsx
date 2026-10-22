@@ -218,7 +218,7 @@ export default function ExecutiveProfile() {
             tone: "info",
             run: async () => {
               await auth.signOut();
-              nav("/login");
+              nav("/login", { replace: true });
             },
           })
         }

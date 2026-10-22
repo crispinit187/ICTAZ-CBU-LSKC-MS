@@ -96,7 +96,7 @@ export default function RegistrarPage() {
 
   const signOut = async () => {
     await auth.signOut();
-    nav("/login");
+    nav("/login", { replace: true });
   };
 
   if (!sessions.length)
