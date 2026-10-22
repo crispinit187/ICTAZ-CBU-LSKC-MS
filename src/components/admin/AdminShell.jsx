@@ -40,8 +40,7 @@ const GROUPS = [
         key: "executives",
         label: "Executives",
         to: "/admin/executives",
-        any: ["executive.view_full", "executive_profile.manage"],
-        built: false,
+        any: ["executive.view_full"],
       },
       { key: "roles", label: "Roles", to: "/roles", any: ["role.assign"] },
       {
@@ -49,7 +48,6 @@ const GROUPS = [
         label: "Programs",
         to: "/admin/programs",
         any: ["program.manage"],
-        built: false,
       },
     ],
   },

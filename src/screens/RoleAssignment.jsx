@@ -1,5 +1,6 @@
 import React from "react";
 import ConfirmDialog, { UnsavedGuard } from "../components/ConfirmDialog.jsx";
+import { AdminSidebar } from "../components/admin/AdminShell.jsx";
 
 const renderScreen = (v, props) => (
   <div
@@ -13,139 +14,7 @@ const renderScreen = (v, props) => (
       fontFamily: "Arial, Helvetica, sans-serif",
     }}
   >
-    <aside
-      style={{
-        flex: "0 0 248px",
-        boxSizing: "border-box",
-        padding: "22px 16px",
-        background: "#000000",
-        borderRight: "1px solid #1c1c1c",
-        display: "flex",
-        flexDirection: "column",
-        gap: "6px",
-      }}
-    >
-      <a
-        href="#"
-        style={{
-          padding: "4px 14px 22px",
-          fontSize: "21px",
-          fontWeight: "bold",
-          letterSpacing: "-0.5px",
-          color: "#ffffff",
-        }}
-      >
-        {"ICTAZ "}
-        <span style={{ color: "#0066ff" }}>CBU</span>
-      </a>
-      <div
-        style={{
-          padding: "0 14px 8px",
-          color: "#75859e",
-          fontSize: "11px",
-          fontWeight: "bold",
-          letterSpacing: "2px",
-        }}
-      >
-        MANAGE
-      </div>
-      <a className="nav-item" href="#">
-        <span>Dashboard</span>
-      </a>
-      <a className="nav-item" href="#">
-        <span>Sessions</span>
-      </a>
-      <a className="nav-item" href="#">
-        <span>Members</span>
-      </a>
-      <a className="nav-item" href="#">
-        <span>Approvals</span>
-      </a>
-      <a className="nav-item" href="#">
-        <span>Executives</span>
-      </a>
-      <a className="nav-item" href="#">
-        <span>Programs</span>
-      </a>
-      <div
-        style={{
-          padding: "18px 14px 8px",
-          color: "#75859e",
-          fontSize: "11px",
-          fontWeight: "bold",
-          letterSpacing: "2px",
-        }}
-      >
-        INSIGHTS
-      </div>
-      <a className="nav-item" href="#">
-        <span>Analytics</span>
-      </a>
-      <a className="nav-item" href="#">
-        <span>Reports and exports</span>
-      </a>
-      <a className="nav-item" href="#">
-        <span>Audit log</span>
-      </a>
-      <div
-        style={{
-          padding: "18px 14px 8px",
-          color: "#54adff",
-          fontSize: "11px",
-          fontWeight: "bold",
-          letterSpacing: "2px",
-        }}
-      >
-        SUPER ADMIN
-      </div>
-      <a
-        className="nav-item"
-        href="#"
-        style={{ background: "rgba(0,102,255,0.14)", color: "#54adff" }}
-      >
-        <span>Roles</span>
-      </a>
-      <a className="nav-item" href="#">
-        <span>System settings</span>
-      </a>
-      <a className="nav-item" href="#">
-        <span>Email templates</span>
-      </a>
-      <a className="nav-item" href="#">
-        <span>Terms and privacy</span>
-      </a>
-      <a className="nav-item" href="#">
-        <span>Anonymise a member</span>
-      </a>
-      <div style={{ flexGrow: "1" }}></div>
-      <div
-        style={{
-          padding: "14px",
-          borderRadius: "12px",
-          background: "rgba(255,255,255,0.035)",
-          border: "1px solid rgba(255,255,255,0.08)",
-        }}
-      >
-        <div style={{ fontSize: "14px", fontWeight: "bold" }}>
-          Sample Super Admin
-        </div>
-        <div style={{ marginTop: "3px", color: "#8a99b3", fontSize: "12px" }}>
-          Super Admin · Executive
-        </div>
-        <a
-          href="#"
-          onClick={v.signOut}
-          style={{
-            display: "inline-block",
-            marginTop: "10px",
-            fontSize: "13px",
-            fontWeight: "600",
-          }}
-        >
-          Sign out
-        </a>
-      </div>
-    </aside>
+    <AdminSidebar active="roles" />
     <main
       style={{
         flex: "1 1 680px",
@@ -172,7 +41,7 @@ const renderScreen = (v, props) => (
         >
           Only a Super Admin can give or remove staff roles. Registrar, Reviewer
           and Administrator go to current executive members only, and end
-          automatically when their executive profile ends. Sample data.
+          automatically when their executive profile ends.{v.sampleNote}
         </p>
       </header>
       {v.toast && (
@@ -387,6 +256,27 @@ const renderScreen = (v, props) => (
             >
               Member
             </label>
+            {v.real && (
+              <input
+                type="search"
+                aria-label="Search for a member"
+                placeholder="Search by name or student number to find someone else"
+                value={v.search}
+                onChange={v.onSearch}
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  marginBottom: "8px",
+                  padding: "11px 14px",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  borderRadius: "9px",
+                  color: "#f1f6ff",
+                  fontFamily: "inherit",
+                  fontSize: "14px",
+                }}
+              />
+            )}
             <select
               className="field"
               id="mem"
@@ -620,8 +510,20 @@ class Screen extends React.Component {
       ],
     };
   }
+  people() {
+    const r = this.props.real;
+    if (!r) return this.state.people;
+    return r.people.map((p) => ({
+      id: p.id,
+      name: p.name,
+      no: p.student_number,
+      position: p.position || "",
+      role: p.role,
+      profileId: p.profile_id,
+    }));
+  }
   renderVals() {
-    const s = this.state;
+    const s = Object.assign({}, this.state, { people: this.people() });
     const colors = {
       "Super Admin": [
         "rgba(84,173,255,0.16)",
@@ -651,33 +553,39 @@ class Screen extends React.Component {
           ? "The last Active Super Admin cannot be removed"
           : "Return this person to Member",
         canEnd: p.role !== "Super Admin" && !!p.position,
-        remove: () =>
-          this.setRole(
-            p.id,
-            "Member",
+        remove: (reason) => {
+          const msg =
             "Removed the " +
-              p.role +
-              " role from " +
-              p.name +
-              ". They have been emailed and the change is in the audit log.",
-            "ok",
-          ),
-        endProfile: () =>
-          this.setRole(
-            p.id,
-            "Member",
+            p.role +
+            " role from " +
+            p.name +
+            ". They have been emailed and the change is in the audit log.";
+          return this.props.real
+            ? this.setRoleReal(p, "Member", msg, "ok", reason)
+            : this.setRole(p.id, "Member", msg, "ok");
+        },
+        endProfile: (reason) => {
+          const msg =
             "The executive profile for " +
-              p.name +
-              " ended, so the " +
-              p.role +
-              " role was removed automatically. They have been emailed.",
-            "info",
-            true,
-          ),
+            p.name +
+            " ended, so the " +
+            p.role +
+            " role was removed automatically. They have been emailed.";
+          return this.props.real
+            ? this.setRoleReal(p, "Member", msg, "info", reason, true)
+            : this.setRole(p.id, "Member", msg, "info", true);
+        },
       };
     });
-    const cur =
-      s.people.find((p) => String(p.id) === s.selMember) || s.people[0];
+    const cur = s.people.find((p) => String(p.id) === s.selMember) ||
+      (this.props.real && s.people.find((p) => p.role === "Member")) ||
+      s.people[0] || {
+        id: "",
+        name: "Nobody",
+        no: "",
+        position: "",
+        role: "Member",
+      };
     const staffRole =
       s.selRole === "Registrar" ||
       s.selRole === "Reviewer" ||
@@ -698,6 +606,7 @@ class Screen extends React.Component {
     const tone = {
       ok: ["rgba(61,220,151,0.1)", "rgba(61,220,151,0.4)", "#9df0c8"],
       info: ["rgba(84,173,255,0.1)", "rgba(84,173,255,0.4)", "#bcd6ff"],
+      error: ["rgba(255,107,107,0.1)", "rgba(255,107,107,0.4)", "#ffb3b3"],
     }[s.toastKind] || [
       "rgba(61,220,151,0.1)",
       "rgba(61,220,151,0.4)",
@@ -710,7 +619,14 @@ class Screen extends React.Component {
       toastBg: tone[0],
       toastBorder: tone[1],
       toastColor: tone[2],
-      selMember: s.selMember,
+      real: !!this.props.real,
+      sampleNote: this.props.real ? "" : " Sample data.",
+      search: s.search || "",
+      onSearch: (e) => {
+        this.setState({ search: e.target.value });
+        this.props.real.onSearch(e.target.value);
+      },
+      selMember: String(cur.id),
       selRole: s.selRole,
       reason: s.reason,
       memberOptions: s.people.map((p) => ({
@@ -729,19 +645,37 @@ class Screen extends React.Component {
       onReason: (e) => this.setState({ reason: e.target.value }),
       assign: () => {
         if (blocked || same || this.state.reason.trim().length < 3) return;
-        this.setRole(
-          cur.id,
-          this.state.selRole,
+        const msg =
           "Assigned the " +
-            this.state.selRole +
-            " role to " +
-            cur.name +
-            ". They have been emailed and the change is in the audit log.",
-          "ok",
-        );
+          this.state.selRole +
+          " role to " +
+          cur.name +
+          ". They have been emailed and the change is in the audit log.";
+        if (this.props.real)
+          this.setRoleReal(
+            cur,
+            this.state.selRole,
+            msg,
+            "ok",
+            this.state.reason.trim(),
+          );
+        else this.setRole(cur.id, this.state.selRole, msg, "ok");
         this.setState({ reason: "" });
       },
     };
+  }
+  async setRoleReal(p, role, msg, kind, reason, ending) {
+    const r = this.props.real;
+    const err = ending
+      ? await r.endProfile(p.profileId, reason)
+      : role === "Member"
+        ? await r.removeRole(p.id, reason)
+        : await r.assignRole(p.id, role, reason);
+    this.setState(
+      err
+        ? { toast: err, toastKind: "error" }
+        : { toast: msg, toastKind: kind },
+    );
   }
   setRole(id, role, msg, kind, clearPosition) {
     const people = this.state.people.map((p) =>
@@ -783,6 +717,9 @@ class Screen extends React.Component {
             p.name +
             " goes back to Member straight away and is emailed. The change is recorded in the audit log.",
           confirmLabel: "Remove role",
+          reasonLabel: this.props.real
+            ? "Reason (recorded in the audit log)"
+            : undefined,
           tone: "danger",
           run: rm,
         });
@@ -795,6 +732,9 @@ class Screen extends React.Component {
             p.role +
             " role is removed automatically.",
           confirmLabel: "End profile",
+          reasonLabel: this.props.real
+            ? "Reason (recorded in the audit log)"
+            : undefined,
           tone: "danger",
           run: end,
         });
@@ -804,9 +744,8 @@ class Screen extends React.Component {
       const role = this.state.selRole;
       if (role === "Administrator" || role === "Super Admin") {
         const who = (
-          this.state.people.find(
-            (p) => String(p.id) === this.state.selMember,
-          ) || this.state.people[0]
+          this.people().find((p) => String(p.id) === this.state.selMember) ||
+          this.people()[0] || { name: "them" }
         ).name;
         this.ask({
           title: "Give " + who + " the " + role + " role?",

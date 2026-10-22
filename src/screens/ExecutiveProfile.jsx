@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   AuthPage,
@@ -9,6 +9,7 @@ import {
 } from "../components/auth/AuthParts.jsx";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import { useAuth } from "../auth/AuthProvider.jsx";
+import { live, rpc } from "../lib/api.js";
 
 // Sample data for the design demo. The real values come from the member record and executive profile.
 const ME = {
@@ -94,6 +95,45 @@ export default function ExecutiveProfile() {
   const [photo, setPhoto] = useState(null);
   const [photoErr, setPhotoErr] = useState(null);
   const file = useRef(null);
+  const real = live();
+  const [prof, setProf] = useState(null);
+  useEffect(() => {
+    if (!real) return;
+    rpc("my_profile").then((r) => {
+      if (r.error) return;
+      setProf(r.data);
+      setConsent(!!r.data.consent);
+      setAdminDisplay(!!(r.data.executive && r.data.executive.public_display));
+    });
+  }, [real]);
+  const initialsOf = (n) =>
+    String(n || "")
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((x) => x[0].toUpperCase())
+      .join("");
+  const me = prof
+    ? {
+        name: prof.name,
+        initials: initialsOf(prof.name),
+        position: prof.executive ? prof.executive.position : "",
+        since: prof.executive
+          ? new Date(prof.executive.since).toLocaleDateString("en-GB", {
+              month: "long",
+              year: "numeric",
+            })
+          : "",
+        role: prof.role,
+        studentNumber: prof.student_number,
+        email: prof.email,
+        phone: prof.phone || "Not given",
+        program: prof.program || "—",
+        year:
+          (prof.year_of_study || "—") + "," + (prof.semester_of_study || "—"),
+      }
+    : ME;
+  const isExec = !real || !!(prof && prof.executive);
 
   const visible = consent && adminDisplay;
 
@@ -104,7 +144,11 @@ export default function ExecutiveProfile() {
         body: "If an Administrator then turns display on, the public page will show your name, position, programme and picture. Nothing else is published.",
         confirmLabel: "Yes, allow it",
         tone: "info",
-        run: () => {
+        run: async () => {
+          if (real) {
+            const r = await rpc("set_my_consent", { p_consent: true });
+            if (r.error) return setToast({ tone: "bad", text: r.error });
+          }
           setConsent(true);
           setChanged(stamp());
           setToast({
@@ -119,7 +163,11 @@ export default function ExecutiveProfile() {
         body: "Your information stops being public immediately, even if an Administrator had display turned on.",
         confirmLabel: "Withdraw consent",
         tone: "danger",
-        run: () => {
+        run: async () => {
+          if (real) {
+            const r = await rpc("set_my_consent", { p_consent: false });
+            if (r.error) return setToast({ tone: "bad", text: r.error });
+          }
           setConsent(false);
           setAdminDisplay(false);
           setChanged(stamp());
@@ -214,7 +262,7 @@ export default function ExecutiveProfile() {
           letterSpacing: "-1.4px",
         }}
       >
-        Executive profile
+        {isExec ? "Executive profile" : "My account"}
       </h1>
 
       <div aria-live="polite">
@@ -257,7 +305,7 @@ export default function ExecutiveProfile() {
                 fontWeight: "bold",
               }}
             >
-              {ME.initials}
+              {me.initials}
             </div>
           )}
           <div style={{ flex: "1 1 220px" }}>
@@ -268,12 +316,14 @@ export default function ExecutiveProfile() {
                 letterSpacing: "-0.5px",
               }}
             >
-              {ME.name}
+              {me.name}
             </div>
             <div
               style={{ margin: "4px 0 10px", color: "#aebfda", fontSize: 14 }}
             >
-              {ME.position} · current since {ME.since}
+              {me.position
+                ? me.position + " · current since " + me.since
+                : "Chapter member"}
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <span
@@ -300,38 +350,40 @@ export default function ExecutiveProfile() {
                   fontWeight: "bold",
                 }}
               >
-                {ME.role}
+                {me.role}
               </span>
             </div>
           </div>
-          <div>
-            <input
-              ref={file}
-              type="file"
-              accept="image/jpeg,image/png"
-              onChange={pickPhoto}
-              style={{ display: "none" }}
-              aria-label="Choose a profile picture"
-            />
-            <button
-              type="button"
-              className="btn-ghost"
-              onClick={() => file.current && file.current.click()}
-              style={{
-                padding: "11px 18px",
-                border: "1px solid #333333",
-                borderRadius: 8,
-                background: "transparent",
-                color: "#ffffff",
-                fontFamily: "inherit",
-                fontSize: 14,
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              Change picture
-            </button>
-          </div>
+          {!real && (
+            <div>
+              <input
+                ref={file}
+                type="file"
+                accept="image/jpeg,image/png"
+                onChange={pickPhoto}
+                style={{ display: "none" }}
+                aria-label="Choose a profile picture"
+              />
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => file.current && file.current.click()}
+                style={{
+                  padding: "11px 18px",
+                  border: "1px solid #333333",
+                  borderRadius: 8,
+                  background: "transparent",
+                  color: "#ffffff",
+                  fontFamily: "inherit",
+                  fontSize: 14,
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                }}
+              >
+                Change picture
+              </button>
+            </div>
+          )}
         </div>
         {photoErr && (
           <div
@@ -341,152 +393,163 @@ export default function ExecutiveProfile() {
             {photoErr}
           </div>
         )}
-        <div style={{ marginTop: 8, color: "#75859e", fontSize: 12 }}>
-          JPG or PNG, up to 2 MB.
-        </div>
+        {!real && (
+          <div style={{ marginTop: 8, color: "#75859e", fontSize: 12 }}>
+            JPG or PNG, up to 2 MB.
+          </div>
+        )}
       </Card>
 
-      <Card style={{ marginBottom: 18 }}>
-        <h2 style={{ margin: 0, fontSize: 20, letterSpacing: "-0.4px" }}>
-          Public display
-        </h2>
-        <p
-          style={{
-            margin: "8px 0 18px",
-            color: "#aebfda",
-            fontSize: 14,
-            lineHeight: 1.7,
-          }}
-        >
-          The chapter may list its current executives on a public page. That
-          needs two things:{" "}
-          <strong style={{ color: "#fff" }}>your consent</strong>, and then an{" "}
-          <strong style={{ color: "#fff" }}>
-            Administrator turning display on
-          </strong>
-          . Neither is enough alone.
-        </p>
-        <div
-          style={{
-            display: "flex",
-            gap: 16,
-            alignItems: "center",
-            padding: "16px 18px",
-            borderRadius: 14,
-            background: "rgba(255,255,255,0.035)",
-            border: "1px solid rgba(255,255,255,0.1)",
-          }}
-        >
-          <div style={{ flexGrow: 1 }}>
-            <div
-              id="consent-label"
-              style={{ fontWeight: "bold", fontSize: 15 }}
-            >
-              Allow my information to be published to the public
+      {isExec && (
+        <Card style={{ marginBottom: 18 }}>
+          <h2 style={{ margin: 0, fontSize: 20, letterSpacing: "-0.4px" }}>
+            Public display
+          </h2>
+          <p
+            style={{
+              margin: "8px 0 18px",
+              color: "#aebfda",
+              fontSize: 14,
+              lineHeight: 1.7,
+            }}
+          >
+            The chapter may list its current executives on a public page. That
+            needs two things:{" "}
+            <strong style={{ color: "#fff" }}>your consent</strong>, and then an{" "}
+            <strong style={{ color: "#fff" }}>
+              Administrator turning display on
+            </strong>
+            . Neither is enough alone.
+          </p>
+          <div
+            style={{
+              display: "flex",
+              gap: 16,
+              alignItems: "center",
+              padding: "16px 18px",
+              borderRadius: 14,
+              background: "rgba(255,255,255,0.035)",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
+          >
+            <div style={{ flexGrow: 1 }}>
+              <div
+                id="consent-label"
+                style={{ fontWeight: "bold", fontSize: 15 }}
+              >
+                Allow my information to be published to the public
+              </div>
+              <div
+                id="consent-desc"
+                style={{
+                  marginTop: 4,
+                  color: "#8a99b3",
+                  fontSize: 12,
+                  lineHeight: 1.5,
+                }}
+              >
+                {changed
+                  ? `Last changed ${changed}.`
+                  : "Off by default. This setting belongs to you and carries over to any new position."}
+              </div>
             </div>
-            <div
-              id="consent-desc"
+            <span
               style={{
-                marginTop: 4,
-                color: "#8a99b3",
-                fontSize: 12,
-                lineHeight: 1.5,
+                fontWeight: "bold",
+                fontSize: 14,
+                color: consent ? "#9df0c8" : "#aebfda",
               }}
             >
-              {changed
-                ? `Last changed ${changed}.`
-                : "Off by default. This setting belongs to you and carries over to any new position."}
-            </div>
+              {consent ? "Yes" : "No"}
+            </span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={consent}
+              aria-labelledby="consent-label"
+              aria-describedby="consent-desc"
+              className="switch"
+              onClick={askToggle}
+            />
           </div>
-          <span
+
+          <div
             style={{
-              fontWeight: "bold",
-              fontSize: 14,
-              color: consent ? "#9df0c8" : "#aebfda",
+              display: "flex",
+              gap: 12,
+              flexWrap: "wrap",
+              marginTop: 14,
             }}
           >
-            {consent ? "Yes" : "No"}
-          </span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={consent}
-            aria-labelledby="consent-label"
-            aria-describedby="consent-desc"
-            className="switch"
-            onClick={askToggle}
-          />
-        </div>
+            <Gate label="YOUR CONSENT" on={consent} note="You control this." />
+            <Gate
+              label="ADMINISTRATOR DISPLAY"
+              on={adminDisplay}
+              note={
+                consent
+                  ? "Set by an Administrator, off until they turn it on."
+                  : "Cannot be turned on while your consent is No."
+              }
+            />
+            <Gate
+              label="SHOWN PUBLICLY"
+              on={visible}
+              note={
+                visible
+                  ? "Your name, position, programme and picture are on the public page."
+                  : "You are not on the public page."
+              }
+            />
+          </div>
 
-        <div
-          style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 14 }}
-        >
-          <Gate label="YOUR CONSENT" on={consent} note="You control this." />
-          <Gate
-            label="ADMINISTRATOR DISPLAY"
-            on={adminDisplay}
-            note={
-              consent
-                ? "Set by an Administrator, off until they turn it on."
-                : "Cannot be turned on while your consent is No."
-            }
-          />
-          <Gate
-            label="SHOWN PUBLICLY"
-            on={visible}
-            note={
-              visible
-                ? "Your name, position, programme and picture are on the public page."
-                : "You are not on the public page."
-            }
-          />
-        </div>
-
-        <div
-          style={{
-            marginTop: 16,
-            display: "flex",
-            gap: 12,
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <button
-            type="button"
-            className="btn-ghost"
-            disabled={!consent || adminDisplay}
-            title={
-              consent
-                ? "Demo only: simulates the Administrator"
-                : "An Administrator can turn display on only while your consent is Yes"
-            }
-            onClick={() => {
-              setAdminDisplay(true);
-              setToast({
-                tone: "info",
-                text: "An Administrator turned display on. You are now on the public page. Withdraw your consent at any time to remove yourself immediately.",
-              });
-            }}
-            style={{
-              padding: "10px 16px",
-              border: "1px solid #333333",
-              borderRadius: 8,
-              background: "transparent",
-              color: "#ffffff",
-              fontFamily: "inherit",
-              fontSize: 13,
-              fontWeight: "bold",
-              cursor: !consent || adminDisplay ? "not-allowed" : "pointer",
-              opacity: !consent || adminDisplay ? 0.5 : 1,
-            }}
-          >
-            Demo: Administrator turns display on
-          </button>
-          <span style={{ color: "#75859e", fontSize: 12 }}>
-            Only for this design demo.
-          </span>
-        </div>
-      </Card>
+          {!real && (
+            <div
+              style={{
+                marginTop: 16,
+                display: "flex",
+                gap: 12,
+                alignItems: "center",
+                flexWrap: "wrap",
+              }}
+            >
+              <button
+                type="button"
+                className="btn-ghost"
+                disabled={!consent || adminDisplay}
+                title={
+                  consent
+                    ? "Demo only: simulates the Administrator"
+                    : "An Administrator can turn display on only while your consent is Yes"
+                }
+                onClick={() => {
+                  setAdminDisplay(true);
+                  setToast({
+                    tone: "info",
+                    text: "An Administrator turned display on. You are now on the public page. Withdraw your consent at any time to remove yourself immediately.",
+                  });
+                }}
+                style={{
+                  padding: "10px 16px",
+                  border: "1px solid #333333",
+                  borderRadius: 8,
+                  background: "transparent",
+                  color: "#ffffff",
+                  fontFamily: "inherit",
+                  fontSize: 13,
+                  fontWeight: "bold",
+                  cursor: !consent || adminDisplay ? "not-allowed" : "pointer",
+                  opacity: !consent || adminDisplay ? 0.5 : 1,
+                }}
+              >
+                Demo: Administrator turns display on
+              </button>
+              <span style={{ color: "#75859e", fontSize: 12 }}>
+                Only for this design demo.
+              </span>
+            </div>
+          )}
+        </Card>
+      )}
 
       <Card style={{ marginBottom: 18 }}>
         <h2
@@ -538,11 +601,11 @@ export default function ExecutiveProfile() {
         >
           Your details
         </h2>
-        {row("Student number", ME.studentNumber)}
-        {row("Email", ME.email)}
-        {row("Phone", ME.phone)}
-        {row("Programme", ME.program)}
-        {row("Year and semester", ME.year)}
+        {row("Student number", me.studentNumber)}
+        {row("Email", me.email)}
+        {row("Phone", me.phone)}
+        {row("Programme", me.program)}
+        {row("Year and semester", me.year)}
         <p
           style={{
             margin: "14px 0 0",
@@ -551,8 +614,9 @@ export default function ExecutiveProfile() {
             lineHeight: 1.6,
           }}
         >
-          Sample data for the design demo. Editing details and changing your
-          password will be on this page.
+          {real
+            ? "Ask an Administrator if any of these details are wrong."
+            : "Sample data for the design demo. Editing details and changing your password will be on this page."}
         </p>
       </Card>
 

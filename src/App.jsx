@@ -16,10 +16,12 @@ import AdminDashboardPage from "./screens/AdminDashboardPage.jsx";
 import ApprovalsPage from "./screens/ApprovalsPage.jsx";
 import MembersPage from "./screens/MembersPage.jsx";
 import SessionsPage from "./screens/SessionsPage.jsx";
+import ExecutivesPage from "./screens/ExecutivesPage.jsx";
+import ProgramsPage from "./screens/ProgramsPage.jsx";
 import RegistrarPage from "./screens/RegistrarPage.jsx";
 import QrDisplayPage from "./screens/QrDisplayPage.jsx";
 import MemberScan from "./screens/MemberScan.jsx";
-import RoleAssignment from "./screens/RoleAssignment.jsx";
+import RoleAssignmentPage from "./screens/RoleAssignmentPage.jsx";
 import RegisterScreen from "./screens/RegisterScreen.jsx";
 import FirstSignIn from "./screens/FirstSignIn.jsx";
 import ExecutiveProfile from "./screens/ExecutiveProfile.jsx";
@@ -245,6 +247,22 @@ function AppRoutes({ location }) {
         }
       />
       <Route
+        path="/admin/executives"
+        element={
+          <Protected need="executive.view_full">
+            <ExecutivesPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/admin/programs"
+        element={
+          <Protected need="program.manage">
+            <ProgramsPage />
+          </Protected>
+        }
+      />
+      <Route
         path="/admin/members"
         element={
           <Protected need="member.view">
@@ -256,7 +274,7 @@ function AppRoutes({ location }) {
         path="/roles"
         element={
           <Protected need="role.assign">
-            <Routed as={RoleAssignment} />
+            <RoleAssignmentPage />
           </Protected>
         }
       />

@@ -285,9 +285,20 @@ function Detail({ id, onClose, onChanged, canDo }) {
             </div>
           )}
           {canDo.number && !m.is_bootstrap && (
-            <Field label="Change student number">
+            <div>
+              <span
+                style={{
+                  display: "block",
+                  marginBottom: 6,
+                  color: T.muted,
+                  fontSize: 13,
+                }}
+              >
+                Change student number
+              </span>
               <div style={{ display: "flex", gap: 8 }}>
                 <input
+                  aria-label="New student number"
                   style={{ ...input, flex: 1, minWidth: 0 }}
                   inputMode="numeric"
                   maxLength={8}
@@ -325,7 +336,7 @@ function Detail({ id, onClose, onChanged, canDo }) {
                   Change
                 </Btn>
               </div>
-            </Field>
+            </div>
           )}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {canDo.suspend && m.status === "Active" && (
