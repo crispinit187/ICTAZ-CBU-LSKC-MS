@@ -12,6 +12,7 @@ import { Splash } from "../auth/guards.jsx";
 import AccountCards from "../components/AccountCards.jsx";
 import { homeFor, useAuth } from "../auth/AuthProvider.jsx";
 import { live, rpc } from "../lib/api.js";
+import { pictureUrl, removeFile, uploadPicture } from "../lib/picture.js";
 
 // Sample data for the design demo. The real values come from the member record and executive profile.
 const ME = {
@@ -184,13 +185,41 @@ export default function ExecutiveProfile() {
     }
   };
 
+  const pickReal = async (ev) => {
+    const fl = ev.target.files && ev.target.files[0];
+    ev.target.value = "";
+    if (!fl) return;
+    setPhotoErr(null);
+    const up = await uploadPicture(auth.ctx.id, fl);
+    if (up.error) return setPhotoErr(up.error);
+    const r = await rpc("set_my_picture", { p_path: up.path });
+    if (r.error) {
+      await removeFile(up.path);
+      return setPhotoErr(r.error);
+    }
+    await removeFile(r.data);
+    await reload();
+    setToast({ tone: "ok", text: "Your picture was updated." });
+  };
+  const removeReal = async () => {
+    const r = await rpc("clear_my_picture");
+    if (r.error) return setPhotoErr(r.error);
+    await removeFile(r.data);
+    await reload();
+    setToast({ tone: "ok", text: "Your picture was removed." });
+  };
+  const realPhoto =
+    real && prof && prof.executive
+      ? pictureUrl(prof.executive.picture_path)
+      : null;
+
   const pickPhoto = (ev) => {
     const fl = ev.target.files && ev.target.files[0];
     if (!fl) return;
-    if (!/^image\/(jpeg|png)$/.test(fl.type))
-      return setPhotoErr("Choose a JPG or PNG picture.");
-    if (fl.size > 2 * 1024 * 1024)
-      return setPhotoErr("That picture is over 2 MB. Choose a smaller one.");
+    if (!/^image\/(jpeg|png|webp)$/.test(fl.type))
+      return setPhotoErr("Choose a JPG, PNG or WebP picture.");
+    if (fl.size > 10 * 1024 * 1024)
+      return setPhotoErr("That picture is over 10 MB. Choose a smaller one.");
     setPhotoErr(null);
     setPhoto(URL.createObjectURL(fl));
     setToast({
@@ -294,9 +323,9 @@ export default function ExecutiveProfile() {
             flexWrap: "wrap",
           }}
         >
-          {photo ? (
+          {(real ? realPhoto : photo) ? (
             <img
-              src={photo}
+              src={real ? realPhoto : photo}
               alt="Your profile picture"
               style={{
                 width: 88,
@@ -370,13 +399,13 @@ export default function ExecutiveProfile() {
               </span>
             </div>
           </div>
-          {!real && (
-            <div>
+          {(!real || isExec) && (
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <input
                 ref={file}
                 type="file"
-                accept="image/jpeg,image/png"
-                onChange={pickPhoto}
+                accept="image/jpeg,image/png,image/webp"
+                onChange={real ? pickReal : pickPhoto}
                 style={{ display: "none" }}
                 aria-label="Choose a profile picture"
               />
@@ -396,8 +425,32 @@ export default function ExecutiveProfile() {
                   cursor: "pointer",
                 }}
               >
-                Change picture
+                {real && realPhoto
+                  ? "Change picture"
+                  : real
+                    ? "Add a picture"
+                    : "Change picture"}
               </button>
+              {real && realPhoto && (
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={removeReal}
+                  style={{
+                    padding: "11px 18px",
+                    border: "1px solid #333333",
+                    borderRadius: 8,
+                    background: "transparent",
+                    color: "#ffb3b3",
+                    fontFamily: "inherit",
+                    fontSize: 14,
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                  }}
+                >
+                  Remove picture
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -409,9 +462,10 @@ export default function ExecutiveProfile() {
             {photoErr}
           </div>
         )}
-        {!real && (
+        {(!real || isExec) && (
           <div style={{ marginTop: 8, color: "#75859e", fontSize: 12 }}>
-            JPG or PNG, up to 2 MB.
+            JPG, PNG or WebP, up to 10 MB. It is shown on the public page only
+            if you have agreed and an Administrator has turned display on.
           </div>
         )}
       </Card>

@@ -13,6 +13,7 @@ import {
 } from "../components/admin/ui.jsx";
 import { can, useAuth } from "../auth/AuthProvider.jsx";
 import { live, rpc } from "../lib/api.js";
+import { pictureUrl } from "../lib/picture.js";
 
 const fmt = (d) =>
   d
@@ -431,9 +432,51 @@ export default function ExecutivesPage() {
               <tr key={r.profile_id} style={{ opacity: r.end_date ? 0.55 : 1 }}>
                 <td style={td}>{r.position}</td>
                 <td style={td}>
-                  <div style={{ fontWeight: "bold" }}>{r.name}</div>
-                  <div style={{ color: T.dim, fontSize: 12 }}>
-                    {r.student_number} · {r.program || "—"}
+                  <div
+                    style={{ display: "flex", gap: 12, alignItems: "center" }}
+                  >
+                    {r.picture_path ? (
+                      <img
+                        src={pictureUrl(r.picture_path)}
+                        alt=""
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                          flex: "0 0 40px",
+                        }}
+                      />
+                    ) : (
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          width: 40,
+                          height: 40,
+                          flex: "0 0 40px",
+                          borderRadius: "50%",
+                          background: "linear-gradient(135deg,#0066ff,#003d99)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontWeight: "bold",
+                          fontSize: 14,
+                        }}
+                      >
+                        {String(r.name || "")
+                          .split(/\s+/)
+                          .filter(Boolean)
+                          .slice(0, 2)
+                          .map((x) => x[0].toUpperCase())
+                          .join("")}
+                      </span>
+                    )}
+                    <div>
+                      <div style={{ fontWeight: "bold" }}>{r.name}</div>
+                      <div style={{ color: T.dim, fontSize: 12 }}>
+                        {r.student_number} · {r.program || "—"}
+                      </div>
+                    </div>
                   </div>
                 </td>
                 <td style={td}>

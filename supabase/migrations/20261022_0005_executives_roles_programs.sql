@@ -245,7 +245,7 @@ begin
   end if;
   return (select coalesce(jsonb_agg(x order by x.display_order, x.name), '[]'::jsonb) from (
     select ep.id as profile_id, m.id as member_id, m.name, m.student_number, pos.name as position, pos.display_order,
-           ep.start_date, ep.end_date, ep.ended_reason, ep.public_display, m.exec_public_consent as consent,
+           ep.start_date, ep.end_date, ep.ended_reason, ep.public_display, ep.picture_path, m.exec_public_consent as consent,
            coalesce(pr.display_name, m.program_raw) as program, ep.year_at_time,
            public._top_role(m.id) as role
       from public.executive_profiles ep

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { live, rpc } from "../lib/api.js";
+import { pictureUrl } from "../lib/picture.js";
 
 const SAMPLE = [
-  { name: "Sample President", title: "President" },
-  { name: "Sample Secretary", title: "Secretary General" },
+  { name: "Sample President", title: "President", picture: null },
+  { name: "Sample Secretary", title: "Secretary General", picture: null },
 ];
 
 /* The public page: signed-out visitors can open it. It lists only executives who agreed to appear
@@ -27,7 +28,7 @@ export default function PublicExecutives() {
   (rows || []).forEach((r) => {
     let g = groups.find((x) => x.position === r.title);
     if (!g) groups.push((g = { position: r.title, names: [] }));
-    g.names.push(r.name);
+    g.names.push({ name: r.name, picture: r.picture });
   });
   return (
     <div
@@ -48,6 +49,8 @@ export default function PublicExecutives() {
             marginBottom: 28,
             fontWeight: "bold",
             fontSize: 14,
+            color: "#54adff",
+            textDecoration: "none",
           }}
         >
           Back to sign in
@@ -119,10 +122,54 @@ export default function PublicExecutives() {
               </h2>
               {g.names.map((n) => (
                 <div
-                  key={n}
-                  style={{ fontSize: 20, fontWeight: "bold", padding: "4px 0" }}
+                  key={n.name}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 14,
+                    padding: "8px 0",
+                  }}
                 >
-                  {n}
+                  {n.picture && pictureUrl(n.picture) ? (
+                    <img
+                      src={pictureUrl(n.picture)}
+                      alt={n.name}
+                      style={{
+                        width: 64,
+                        height: 64,
+                        flex: "0 0 64px",
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                        border: "2px solid rgba(84,173,255,0.5)",
+                      }}
+                    />
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        width: 64,
+                        height: 64,
+                        flex: "0 0 64px",
+                        borderRadius: "50%",
+                        background: "linear-gradient(135deg,#0066ff,#003d99)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 22,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {n.name
+                        .split(/\s+/)
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((x) => x[0].toUpperCase())
+                        .join("")}
+                    </span>
+                  )}
+                  <div style={{ fontSize: 20, fontWeight: "bold" }}>
+                    {n.name}
+                  </div>
                 </div>
               ))}
             </section>
