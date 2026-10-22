@@ -379,6 +379,16 @@ export default function ExecutivesPage() {
       active="executives"
       title="Executives"
       subtitle="Current executive members, their positions and public display."
+      actions={
+        <a
+          href={import.meta.env.BASE_URL + "executives"}
+          target="_blank"
+          rel="noreferrer"
+          style={{ fontWeight: "bold", fontSize: 14 }}
+        >
+          Open the public page
+        </a>
+      }
     >
       {!live() && (
         <Notice tone="warn">Connect the database to manage executives.</Notice>

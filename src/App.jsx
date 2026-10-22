@@ -31,6 +31,7 @@ import FirstSignIn from "./screens/FirstSignIn.jsx";
 import ExecutiveProfile from "./screens/ExecutiveProfile.jsx";
 import ForgotPassword from "./screens/ForgotPassword.jsx";
 import ResetPassword from "./screens/ResetPassword.jsx";
+import PublicExecutives from "./screens/PublicExecutives.jsx";
 import LegalPage from "./screens/LegalPage.jsx";
 import FitStage from "./components/FitStage.jsx";
 import PhoneFrame from "./components/PhoneFrame.jsx";
@@ -333,6 +334,7 @@ function AppRoutes({ location }) {
       />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/executives" element={<PublicExecutives />} />
       <Route path="/terms" element={<LegalPage kind="terms" />} />
       <Route path="/privacy" element={<LegalPage kind="privacy" />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
