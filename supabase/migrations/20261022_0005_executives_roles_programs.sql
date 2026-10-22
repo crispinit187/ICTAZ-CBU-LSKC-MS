@@ -360,7 +360,7 @@ begin
     from public.executive_profiles e join public.executive_positions pos on pos.id = e.position_id
    where e.member_id = m.id and e.end_date is null order by e.start_date desc limit 1;
   return jsonb_build_object(
-    'id', m.id, 'name', m.name, 'student_number', m.student_number, 'email', m.email,
+    'id', m.id, 'name', m.name, 'student_number', m.student_number, 'email', m.email, 'pending_email', m.pending_email,
     'phone', m.phone, 'status', m.status, 'role', public._top_role(m.id),
     'program', coalesce((select display_name from public.programs where id = m.program_id), m.program_raw),
     'year_of_study', m.year_of_study, 'semester_of_study', m.semester_of_study,

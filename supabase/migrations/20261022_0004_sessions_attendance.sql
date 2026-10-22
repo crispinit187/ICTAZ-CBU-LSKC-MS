@@ -5,6 +5,20 @@
 -- secret that never leaves the database, and the time window changes every 45 seconds. An old
 -- window still works for 10 seconds, so a scan during the change is not lost.
 
+-- Reads a whole-number setting (Super Admin > Settings), kept inside its allowed range.
+create or replace function public._setting_int(p_key text, p_default integer, p_min integer, p_max integer)
+returns integer
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select least(p_max, greatest(p_min, coalesce(
+    (select case when jsonb_typeof(value) = 'number' then (value #>> '{}')::numeric::integer end
+       from public.settings where key = p_key), p_default)));
+$$;
+revoke all on function public._setting_int(text, integer, integer, integer) from public, anon, authenticated;
+
 -- ---------------------------------------------------------------- sessions
 create or replace function public._facilitators_json(p_session uuid)
 returns jsonb
@@ -66,7 +80,7 @@ begin
   values (btrim(p_title), nullif(btrim(coalesce(p_description, '')), ''), coalesce(p_date, p_start::date),
           p_start, p_end, nullif(btrim(coalesce(p_venue, '')), ''), auth.uid())
   returning id into v_id;
-  insert into public.attendance_qr_secrets (session_id) values (v_id);
+  insert into public.attendance_qr_secrets (session_id, rotation_seconds) values (v_id, public._setting_int('qr_rotation_seconds', 45, 30, 60));
   perform public._set_facilitators(v_id, p_facilitators);
   perform public._audit('session.created', 'attendance', 'session', v_id, null, jsonb_build_object('title', btrim(p_title)), null);
   return v_id;
@@ -200,7 +214,7 @@ begin
   update public.attendance_sessions
      set status = 'Open', opened_at = coalesce(opened_at, now()), closed_at = null
    where id = p_id;
-  insert into public.attendance_qr_secrets (session_id) values (p_id) on conflict (session_id) do nothing;
+  insert into public.attendance_qr_secrets (session_id, rotation_seconds) values (p_id, public._setting_int('qr_rotation_seconds', 45, 30, 60)) on conflict (session_id) do nothing;
   perform public._audit(case when s.status = 'Closed' then 'session.reopened' else 'session.opened' end,
                         'attendance', 'session', p_id, jsonb_build_object('status', s.status), jsonb_build_object('status', 'Open'), null);
 end;
@@ -286,12 +300,13 @@ begin
   if s.status <> 'Open' then
     raise exception 'this session is not open' using errcode = '23514';
   end if;
-  insert into public.attendance_qr_secrets (session_id) values (p_session) on conflict (session_id) do nothing;
+  insert into public.attendance_qr_secrets (session_id, rotation_seconds) values (p_session, public._setting_int('qr_rotation_seconds', 45, 30, 60)) on conflict (session_id) do nothing;
   select rotation_seconds into v_rot from public.attendance_qr_secrets where session_id = p_session;
   v_win := floor(v_now / v_rot);
   return jsonb_build_object(
     'token', 'LSKC1.' || p_session::text || '.' || v_win::text || '.' || public._qr_sig(p_session, v_win),
     'rotation_seconds', v_rot,
+    'grace_seconds', public._setting_int('qr_grace_seconds', 10, 0, 30),
     'seconds_left', greatest(1, ceil((v_win + 1) * v_rot - v_now))::integer,
     'title', s.title, 'venue', s.venue, 'start_at', s.start_at, 'end_at', s.end_at,
     'present', (select count(*) from public.attendance_records a where a.session_id = p_session and a.status = 'Present')
@@ -310,7 +325,7 @@ begin
   if not exists (select 1 from public.attendance_sessions where id = p_session) then
     raise exception 'session not found' using errcode = 'P0002';
   end if;
-  insert into public.attendance_qr_secrets (session_id, regenerated_by) values (p_session, auth.uid())
+  insert into public.attendance_qr_secrets (session_id, regenerated_by, rotation_seconds) values (p_session, auth.uid(), public._setting_int('qr_rotation_seconds', 45, 30, 60))
   on conflict (session_id) do update
     set secret = gen_random_bytes(32), regenerated_at = now(), regenerated_by = auth.uid();
   perform public._audit('session.qr_regenerated', 'attendance', 'session', p_session, null, null, null);
@@ -394,8 +409,8 @@ begin
   v_cur := floor(v_now / v_rot);
   if v_win = v_cur then
     v_ok := true;
-  elsif v_win = v_cur - 1 and v_now - (v_win + 1) * v_rot <= 10 then
-    v_ok := true; -- the previous code stays valid for 10 seconds
+  elsif v_win = v_cur - 1 and v_now - (v_win + 1) * v_rot <= public._setting_int('qr_grace_seconds', 10, 0, 30) then
+    v_ok := true; -- the previous code stays valid for a short grace period
   end if;
   if not v_ok then
     return v_out || jsonb_build_object('result', 'expired');

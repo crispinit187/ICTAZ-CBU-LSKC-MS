@@ -1124,26 +1124,29 @@ const renderScreen = (v, props) => (
               fontWeight: "bold",
               cursor: "pointer",
             }}
+            onClick={() => v.exportGo && v.go("/admin/reports")}
           >
-            Export attendance (CSV)
+            {v.exportGo ? "Reports and exports" : "Export attendance (CSV)"}
           </button>
-          <button
-            className="btn-ghost"
-            type="button"
-            style={{
-              padding: "12px 20px",
-              border: "1px solid #333333",
-              borderRadius: "8px",
-              background: "transparent",
-              color: "#ffffff",
-              fontFamily: "inherit",
-              fontSize: "14px",
-              fontWeight: "bold",
-              cursor: "pointer",
-            }}
-          >
-            Export report (Excel)
-          </button>
+          {!v.exportGo && (
+            <button
+              className="btn-ghost"
+              type="button"
+              style={{
+                padding: "12px 20px",
+                border: "1px solid #333333",
+                borderRadius: "8px",
+                background: "transparent",
+                color: "#ffffff",
+                fontFamily: "inherit",
+                fontSize: "14px",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              Export report (Excel)
+            </button>
+          )}
         </div>
       )}
     </main>
@@ -1333,6 +1336,7 @@ class Screen extends React.Component {
       showSessions: isBuilt("sessions"),
       showOpenButtons: !!open && isBuilt("sessions"),
       showExport: isBuilt("reports"),
+      exportGo: true,
       windowOpen: !!open,
       openId: open ? open.id : "",
       displayPath: open ? "/display?session=" + open.id : "/display",

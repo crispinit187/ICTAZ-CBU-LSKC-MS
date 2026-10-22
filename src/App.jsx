@@ -18,6 +18,10 @@ import MembersPage from "./screens/MembersPage.jsx";
 import SessionsPage from "./screens/SessionsPage.jsx";
 import ExecutivesPage from "./screens/ExecutivesPage.jsx";
 import ProgramsPage from "./screens/ProgramsPage.jsx";
+import AnalyticsPage from "./screens/AnalyticsPage.jsx";
+import ReportsPage from "./screens/ReportsPage.jsx";
+import AuditPage from "./screens/AuditPage.jsx";
+import SettingsPage from "./screens/SettingsPage.jsx";
 import RegistrarPage from "./screens/RegistrarPage.jsx";
 import QrDisplayPage from "./screens/QrDisplayPage.jsx";
 import MemberScan from "./screens/MemberScan.jsx";
@@ -267,6 +271,38 @@ function AppRoutes({ location }) {
         element={
           <Protected need="member.view">
             <MembersPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/admin/analytics"
+        element={
+          <Protected need="analytics.view">
+            <AnalyticsPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/admin/reports"
+        element={
+          <Protected need="analytics.export">
+            <ReportsPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/admin/audit"
+        element={
+          <Protected need="audit.view">
+            <AuditPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/admin/settings"
+        element={
+          <Protected need="settings.manage">
+            <SettingsPage />
           </Protected>
         }
       />

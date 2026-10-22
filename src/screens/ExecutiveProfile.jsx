@@ -8,6 +8,7 @@ import {
   Eyebrow,
 } from "../components/auth/AuthParts.jsx";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
+import AccountCards from "../components/AccountCards.jsx";
 import { useAuth } from "../auth/AuthProvider.jsx";
 import { live, rpc } from "../lib/api.js";
 
@@ -97,14 +98,16 @@ export default function ExecutiveProfile() {
   const file = useRef(null);
   const real = live();
   const [prof, setProf] = useState(null);
-  useEffect(() => {
-    if (!real) return;
+  const reload = () =>
     rpc("my_profile").then((r) => {
       if (r.error) return;
       setProf(r.data);
       setConsent(!!r.data.consent);
       setAdminDisplay(!!(r.data.executive && r.data.executive.public_display));
     });
+  useEffect(() => {
+    if (!real) return;
+    reload();
   }, [real]);
   const initialsOf = (n) =>
     String(n || "")
@@ -615,10 +618,20 @@ export default function ExecutiveProfile() {
           }}
         >
           {real
-            ? "Ask an Administrator if any of these details are wrong."
+            ? "To change your name or student number, ask an Administrator."
             : "Sample data for the design demo. Editing details and changing your password will be on this page."}
         </p>
       </Card>
+
+      {real && prof && (
+        <AccountCards
+          prof={prof}
+          onSaved={(text) => {
+            setToast({ tone: "ok", text });
+            reload();
+          }}
+        />
+      )}
 
       {confirm && (
         <ConfirmDialog

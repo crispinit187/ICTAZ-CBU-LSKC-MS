@@ -4,6 +4,21 @@ Front end: React + Vite SPA. It talks to Supabase with the publishable key only.
 
 Nothing in this folder has been applied to the live project. Please review first.
 
+## 0. Run order (all pieces)
+SQL Editor, in this order, each file once (all are safe to run twice):
+1. `20261022_0001_frontend_integration.sql` (if not already run)
+2. `20261022_0002_registration.sql`
+3. `20261022_0003_approvals_members.sql`
+4. `20261022_0004_sessions_attendance.sql`
+5. `20261022_0005_executives_roles_programs.sql`
+6. `20261022_0006_analytics_audit_settings.sql`
+
+Edge Functions (CLI, `--no-verify-jwt --use-api`): `forgot-password`, `admin-create-user`, `admin-reset-password`, and redeploy `sign-in`.
+
+Not built: sending queued emails (rows are written to `email_queue`; a sender function is still needed), and profile pictures (needs a Storage bucket).
+
+Pages: https://crispinit187.github.io/ICTAZ-CBU-LSKC-MS/ (merge `dev` into `main` to update it).
+
 ## 1. Apply the migration to a branch first
 `supabase/migrations/20261022_0001_frontend_integration.sql`
 
@@ -29,7 +44,7 @@ Routes are guarded by permission code: `analytics.view` /admin, `attendance.mark
 - Possible bug: policy `exec_self_update` has a WITH CHECK subquery comparing `executive_profiles_1.id = executive_profiles_1.id`, so it matches every row and will error once there is more than one profile.
 - `has_permission`, `is_active`, `ok_to_act` are executable by `anon`. Left alone because some policies are `TO public`. Scope those policies to `authenticated`, then revoke.
 - Registration still needs the programme text mapped to `program_id` (the trigger stores `program_raw`).
-- Still demo-only in the front end: register, forgot/reset password, profile editing, and the data on admin, registrar, roles, scan and QR screens.
+- Every screen now uses the database when it is configured; the sample data shows only in the design demo.
 
 ## 6. Front-end setup
 ```
