@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import AdminDashboard from "./AdminDashboard.jsx";
 import { Splash } from "../auth/guards.jsx";
 import { live, rpc } from "../lib/api.js";
+import { can, useAuth } from "../auth/AuthProvider.jsx";
 
 /* Loads the dashboard figures and the waiting registrations, then hands them to the screen.
    Without a database it shows the sample dashboard. */
 export default function AdminDashboardPage() {
   const nav = useNavigate();
+  const auth = useAuth();
   const [data, setData] = useState(null);
   const [pending, setPending] = useState([]);
   const [err, setErr] = useState("");
@@ -52,6 +54,7 @@ export default function AdminDashboardPage() {
   const real = {
     data,
     pending,
+    can: (code) => can(auth.ctx, code),
     onApprove: async (id) => {
       const r = await rpc("approve_registration", { p_id: id });
       await load();

@@ -3,8 +3,11 @@ import AdminShell from "../components/admin/AdminShell.jsx";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import { Btn, Notice, T, card, td, th } from "../components/admin/ui.jsx";
 import { ago, live, rpc } from "../lib/api.js";
+import { can, useAuth } from "../auth/AuthProvider.jsx";
 
 export default function ApprovalsPage() {
+  const auth = useAuth();
+  const canDecide = !live() || can(auth.ctx, "account.approve");
   const [tab, setTab] = useState("Pending");
   const [rows, setRows] = useState(null);
   const [err, setErr] = useState("");
@@ -117,7 +120,7 @@ export default function ApprovalsPage() {
               <th style={th}>STUDENT NO.</th>
               <th style={th}>PROGRAMME</th>
               <th style={th}>YEAR, SEM</th>
-              <th style={th}>SIGN-UP</th>
+              {canDecide && <th style={th}>SIGN-UP</th>}
               <th style={th}>WHEN</th>
               <th style={th}></th>
             </tr>
@@ -127,7 +130,9 @@ export default function ApprovalsPage() {
               <tr key={r.id}>
                 <td style={td}>
                   <div style={{ fontWeight: "bold" }}>{r.name}</div>
-                  <div style={{ color: T.dim, fontSize: 12 }}>{r.email}</div>
+                  {r.email && (
+                    <div style={{ color: T.dim, fontSize: 12 }}>{r.email}</div>
+                  )}
                   {tab === "Rejected" && r.status_reason && (
                     <div
                       style={{ color: "#ffb3b3", fontSize: 12, marginTop: 4 }}
@@ -141,17 +146,19 @@ export default function ApprovalsPage() {
                 <td style={td}>
                   {r.year_of_study || "—"}, {r.semester_of_study || "—"}
                 </td>
-                <td style={td}>
-                  {r.method === "google" ? "Google" : "Password"}
-                  {!r.email_verified && (
-                    <div style={{ color: T.amber, fontSize: 12 }}>
-                      Email not confirmed
-                    </div>
-                  )}
-                </td>
+                {canDecide && (
+                  <td style={td}>
+                    {r.method === "google" ? "Google" : "Password"}
+                    {!r.email_verified && (
+                      <div style={{ color: T.amber, fontSize: 12 }}>
+                        Email not confirmed
+                      </div>
+                    )}
+                  </td>
+                )}
                 <td style={td}>{ago(r.created_at)}</td>
                 <td style={{ ...td, whiteSpace: "nowrap", textAlign: "right" }}>
-                  {tab === "Pending" ? (
+                  {!canDecide ? null : tab === "Pending" ? (
                     <>
                       <Btn
                         kind="approve"

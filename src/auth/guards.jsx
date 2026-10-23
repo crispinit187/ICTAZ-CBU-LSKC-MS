@@ -34,7 +34,8 @@ export function Protected({ need, children }) {
   if (!a.ctx || a.ctx.status !== "Active")
     return <Navigate to="/login" replace state={{ from: loc.pathname }} />;
   if (a.gate) return <Navigate to="/first-sign-in" replace />;
-  if (need && !(a.ctx.permissions || []).includes(need))
+  const needs = need ? [].concat(need) : [];
+  if (needs.length && !needs.some((c) => (a.ctx.permissions || []).includes(c)))
     return <Navigate to={homeFor(a.ctx)} replace />;
   return children;
 }

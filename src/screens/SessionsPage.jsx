@@ -394,7 +394,11 @@ export default function SessionsPage() {
     <AdminShell
       active="sessions"
       title="Sessions"
-      subtitle="Create a session, open it when the meeting starts, and close it when it ends."
+      subtitle={
+        canCreate
+          ? "Create a session, open it when the meeting starts, and close it when it ends."
+          : "See every session and who attended. This view is read only."
+      }
       actions={
         canCreate && (
           <Btn kind="primary" onClick={() => setForm("new")}>

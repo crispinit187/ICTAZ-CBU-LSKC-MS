@@ -21,7 +21,7 @@ const GROUPS = [
         key: "sessions",
         label: "Sessions",
         to: "/admin/sessions",
-        any: ["session.create"],
+        any: ["session.create", "analytics.view"],
       },
       {
         key: "members",
@@ -33,7 +33,7 @@ const GROUPS = [
         key: "approvals",
         label: "Approvals",
         to: "/admin/approvals",
-        any: ["account.approve"],
+        any: ["account.approve", "registration.view"],
         badge: true,
       },
       {
@@ -96,7 +96,8 @@ const label = {
 export function AdminSidebar({ active, pending }) {
   const auth = useAuth();
   const [count, setCount] = useState(null);
-  const canApprove = can(auth.ctx, "account.approve");
+  const canApprove =
+    can(auth.ctx, "account.approve") || can(auth.ctx, "registration.view");
   useEffect(() => {
     if (pending !== undefined || !live() || !canApprove) return undefined;
     let on = true;

@@ -258,7 +258,7 @@ function AppRoutes({ location }) {
       <Route
         path="/admin/approvals"
         element={
-          <Protected need="account.approve">
+          <Protected need={["account.approve", "registration.view"]}>
             <ApprovalsPage />
           </Protected>
         }
@@ -266,7 +266,7 @@ function AppRoutes({ location }) {
       <Route
         path="/admin/sessions"
         element={
-          <Protected need="session.create">
+          <Protected need={["session.create", "analytics.view"]}>
             <SessionsPage />
           </Protected>
         }

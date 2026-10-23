@@ -731,46 +731,58 @@ const renderScreen = (v, props) => (
                   {" · "}
                   {r.year}
                 </span>
-                <div style={{ display: "flex", gap: "8px", width: "170px" }}>
-                  <button
-                    className="btn-approve"
-                    type="button"
-                    onClick={r.approve}
+                {v.canApprove ? (
+                  <div style={{ display: "flex", gap: "8px", width: "170px" }}>
+                    <button
+                      className="btn-approve"
+                      type="button"
+                      onClick={r.approve}
+                      style={{
+                        flex: "1",
+                        padding: "9px 12px",
+                        borderRadius: "8px",
+                        background: "rgba(61,220,151,0.12)",
+                        border: "1px solid rgba(61,220,151,0.45)",
+                        color: "#9df0c8",
+                        fontFamily: "inherit",
+                        fontSize: "13px",
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      className="btn-decline"
+                      type="button"
+                      onClick={r.decline}
+                      style={{
+                        flex: "1",
+                        padding: "9px 12px",
+                        borderRadius: "8px",
+                        background: "rgba(255,107,107,0.1)",
+                        border: "1px solid rgba(255,107,107,0.4)",
+                        color: "#ffb3b3",
+                        fontFamily: "inherit",
+                        fontSize: "13px",
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Decline
+                    </button>
+                  </div>
+                ) : (
+                  <span
                     style={{
-                      flex: "1",
-                      padding: "9px 12px",
-                      borderRadius: "8px",
-                      background: "rgba(61,220,151,0.12)",
-                      border: "1px solid rgba(61,220,151,0.45)",
-                      color: "#9df0c8",
-                      fontFamily: "inherit",
-                      fontSize: "13px",
-                      fontWeight: "bold",
-                      cursor: "pointer",
+                      color: "#8a99b3",
+                      fontSize: "12px",
+                      width: "170px",
                     }}
                   >
-                    Approve
-                  </button>
-                  <button
-                    className="btn-decline"
-                    type="button"
-                    onClick={r.decline}
-                    style={{
-                      flex: "1",
-                      padding: "9px 12px",
-                      borderRadius: "8px",
-                      background: "rgba(255,107,107,0.1)",
-                      border: "1px solid rgba(255,107,107,0.4)",
-                      color: "#ffb3b3",
-                      fontFamily: "inherit",
-                      fontSize: "13px",
-                      fontWeight: "bold",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Decline
-                  </button>
-                </div>
+                    Read only
+                  </span>
+                )}
               </div>
             </React.Fragment>
           ))}
@@ -1052,7 +1064,7 @@ const renderScreen = (v, props) => (
             }}
           >
             <h2 style={{ margin: "0", fontSize: "18px" }}>Recent activity</h2>
-            {isBuilt("audit") && (
+            {isBuilt("audit") && v.canAudit && (
               <a
                 href="#audit"
                 onClick={(e) => {
@@ -1232,6 +1244,11 @@ class Screen extends React.Component {
   componentWillUnmount() {
     if (this.timer) clearInterval(this.timer);
   }
+  /* Whether the signed-in person holds a permission. The sample dashboard allows everything. */
+  can(code) {
+    const real = this.props.real;
+    return !real || !real.can || real.can(code);
+  }
   act(r, approved, reason) {
     const real = this.props.real;
     if (real) {
@@ -1284,7 +1301,7 @@ class Screen extends React.Component {
       name: r.name,
       no: r.student_number,
       email: r.email,
-      method: r.method === "google" ? "Google" : "Password",
+      method: !r.method ? "" : r.method === "google" ? "Google" : "Password",
       prog: r.program || "—",
       year: (r.year_of_study || "—") + "," + (r.semester_of_study || "—"),
     }));
@@ -1345,10 +1362,15 @@ class Screen extends React.Component {
           (fg === 1 ? " guest" : " guests")
         : "",
       bands: d.bands || { high: 0, good: 0, fair: 0, low: 0 },
-      reviewCount: Number(d.review_programs || 0),
-      showSessions: isBuilt("sessions"),
-      showOpenButtons: !!open && isBuilt("sessions"),
-      showExport: isBuilt("reports"),
+      reviewCount: this.can("program.manage")
+        ? Number(d.review_programs || 0)
+        : 0,
+      showSessions: isBuilt("sessions") && this.can("session.create"),
+      showOpenButtons:
+        !!open && isBuilt("sessions") && this.can("session.create"),
+      showExport: isBuilt("reports") && this.can("analytics.export"),
+      canApprove: this.can("account.approve"),
+      canAudit: this.can("audit.view"),
       exportGo: true,
       windowOpen: !!open,
       openId: open ? open.id : "",
@@ -1417,6 +1439,8 @@ class Screen extends React.Component {
       reviewCount: 3,
       showSessions: true,
       showOpenButtons: true,
+      canApprove: true,
+      canAudit: true,
       displayPath: "/display",
       showExport: true,
       toast: s.toast,
