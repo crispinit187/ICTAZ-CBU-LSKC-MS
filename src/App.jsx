@@ -11,6 +11,8 @@ import { gateOf, homeFor, useAuth } from "./auth/AuthProvider.jsx";
 import { GateOnly, Protected } from "./auth/guards.jsx";
 import { demoOpen } from "./lib/supabase.js";
 import { live, rpc } from "./lib/api.js";
+import AdminLayout from "./components/admin/AdminLayout.jsx";
+import { PageTransition } from "./components/admin/adminChrome.js";
 import LoginScreen from "./screens/LoginScreen.jsx";
 import AdminDashboardPage from "./screens/AdminDashboardPage.jsx";
 import ApprovalsPage from "./screens/ApprovalsPage.jsx";
@@ -211,10 +213,22 @@ export default function App() {
       setShown(location);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
+  // Inside the management pages the side panel stays mounted: only the page area fades.
+  const inAdmin = (p) => p === "/roles" || p.startsWith("/admin");
+  const both = inAdmin(shown.pathname) && inAdmin(location.pathname);
+  const group = inAdmin(shown.pathname) ? "admin" : shown.pathname;
+  const trans = {
+    phase,
+    contentPhase: both ? phase : "in",
+    shownPath: shown.pathname,
+    livePath: location.pathname,
+  };
   return (
-    <div key={shown.pathname} className={"page page-" + phase}>
-      <AppRoutes location={shown} />
-    </div>
+    <PageTransition.Provider value={trans}>
+      <div key={group} className={"page page-" + (both ? "in" : phase)}>
+        <AppRoutes location={shown} />
+      </div>
+    </PageTransition.Provider>
   );
 }
 
@@ -247,94 +261,96 @@ function AppRoutes({ location }) {
           </Protected>
         }
       />
-      <Route
-        path="/admin"
-        element={
-          <Protected need="analytics.view">
-            <AdminDashboardPage />
-          </Protected>
-        }
-      />
-      <Route
-        path="/admin/approvals"
-        element={
-          <Protected need={["account.approve", "registration.view"]}>
-            <ApprovalsPage />
-          </Protected>
-        }
-      />
-      <Route
-        path="/admin/sessions"
-        element={
-          <Protected need={["session.create", "analytics.view"]}>
-            <SessionsPage />
-          </Protected>
-        }
-      />
-      <Route
-        path="/admin/executives"
-        element={
-          <Protected need="executive.view_full">
-            <ExecutivesPage />
-          </Protected>
-        }
-      />
-      <Route
-        path="/admin/programs"
-        element={
-          <Protected need="program.manage">
-            <ProgramsPage />
-          </Protected>
-        }
-      />
-      <Route
-        path="/admin/members"
-        element={
-          <Protected need="member.view">
-            <MembersPage />
-          </Protected>
-        }
-      />
-      <Route
-        path="/admin/analytics"
-        element={
-          <Protected need="analytics.view">
-            <AnalyticsPage />
-          </Protected>
-        }
-      />
-      <Route
-        path="/admin/reports"
-        element={
-          <Protected need="analytics.export">
-            <ReportsPage />
-          </Protected>
-        }
-      />
-      <Route
-        path="/admin/audit"
-        element={
-          <Protected need="audit.view">
-            <AuditPage />
-          </Protected>
-        }
-      />
-      <Route
-        path="/admin/settings"
-        element={
-          <Protected need="settings.manage">
-            <SettingsPage />
-          </Protected>
-        }
-      />
-      <Route
-        path="/roles"
-        element={
-          <Protected need="role.assign">
-            <RoleAssignmentPage />
-          </Protected>
-        }
-      />
+      <Route element={<AdminLayout />}>
+        <Route
+          path="/admin"
+          element={
+            <Protected need="analytics.view">
+              <AdminDashboardPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/admin/approvals"
+          element={
+            <Protected need={["account.approve", "registration.view"]}>
+              <ApprovalsPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/admin/sessions"
+          element={
+            <Protected need={["session.create", "analytics.view"]}>
+              <SessionsPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/admin/executives"
+          element={
+            <Protected need="executive.view_full">
+              <ExecutivesPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/admin/programs"
+          element={
+            <Protected need="program.manage">
+              <ProgramsPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/admin/members"
+          element={
+            <Protected need="member.view">
+              <MembersPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/admin/analytics"
+          element={
+            <Protected need="analytics.view">
+              <AnalyticsPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/admin/reports"
+          element={
+            <Protected need="analytics.export">
+              <ReportsPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/admin/audit"
+          element={
+            <Protected need="audit.view">
+              <AuditPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            <Protected need="settings.manage">
+              <SettingsPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/roles"
+          element={
+            <Protected need="role.assign">
+              <RoleAssignmentPage />
+            </Protected>
+          }
+        />
+      </Route>
       <Route path="/register" element={<RegisterScreen />} />
       <Route
         path="/first-sign-in"

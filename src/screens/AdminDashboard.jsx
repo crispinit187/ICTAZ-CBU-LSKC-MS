@@ -2,28 +2,20 @@ import React from "react";
 import { actionText, ago } from "../lib/api.js";
 import ConfirmDialog, { UnsavedGuard } from "../components/ConfirmDialog.jsx";
 import Toast from "../components/Toast.jsx";
-import {
-  AccountMenu,
-  AdminSidebar,
-  isBuilt,
-} from "../components/admin/AdminShell.jsx";
+import { AccountMenu, isBuilt } from "../components/admin/AdminShell.jsx";
+import { useSidebarPending } from "../components/admin/adminChrome.js";
+
+/* Tells the shared side panel how many registrations are waiting. */
+function SidebarCount({ value }) {
+  useSidebarPending(value);
+  return null;
+}
 
 const renderScreen = (v, props) => (
-  <div
-    className="scr-admin"
-    style={{
-      minHeight: "1100px",
-      display: "flex",
-      flexWrap: "wrap",
-      background: "#050505",
-      color: "#ffffff",
-      fontFamily: "Arial, Helvetica, sans-serif",
-    }}
-  >
-    <AdminSidebar active="dashboard" pending={v.sidebarPending} accountTop />
+  <>
+    <SidebarCount value={v.sidebarPending} />
     <main
       style={{
-        flex: "1 1 680px",
         minWidth: "0",
         boxSizing: "border-box",
         padding: "28px 32px 40px",
@@ -1190,7 +1182,7 @@ const renderScreen = (v, props) => (
         </div>
       )}
     </main>
-  </div>
+  </>
 );
 
 class Screen extends React.Component {

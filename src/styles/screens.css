@@ -7,9 +7,11 @@
   text-decoration: underline;
 }
 .scr-admin .nav-item {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   padding: 11px 14px;
   border-radius: 9px;
   color: #aaaaaa;
@@ -469,9 +471,242 @@
   pointer-events: auto;
 }
 @keyframes toast-in {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .toast-pop { animation: none; }
+  .toast-pop {
+    animation: none;
+  }
+}
+
+/* ---- Management layout: one side panel for every page ---- */
+.scr-admin .adm-side {
+  box-sizing: border-box;
+  padding: 22px 16px;
+  background: #000;
+  border-right: 1px solid #1c1c1c;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.scr-admin .adm-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px 18px 14px;
+}
+.scr-admin .adm-logo {
+  font-size: 21px;
+  font-weight: bold;
+  letter-spacing: -0.5px;
+  color: #fff;
+  white-space: nowrap;
+}
+.scr-admin .adm-logo:hover {
+  color: #fff;
+  text-decoration: none;
+}
+.scr-admin .adm-collapse {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  background: transparent;
+  color: #aaa;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.scr-admin .adm-collapse:hover {
+  color: #fff;
+  border-color: #54adff;
+}
+.scr-admin .adm-nav {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.scr-admin .nav-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.scr-admin .nav-icon {
+  flex: 0 0 auto;
+}
+.scr-admin .nav-item[aria-current="page"] {
+  color: #54adff;
+}
+.scr-admin .nav-ind {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  border-radius: 9px;
+  background: rgba(0, 102, 255, 0.14);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.scr-admin .nav-ind.on {
+  opacity: 1;
+}
+.scr-admin .nav-ind.anim {
+  transition:
+    transform 0.33s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.33s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease;
+}
+.scr-admin .adm-profile {
+  margin-top: 8px;
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.scr-admin .adm-mini {
+  display: none;
+}
+.scr-admin .adm-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0, 102, 255, 0.18);
+  border: 1px solid rgba(84, 173, 255, 0.5);
+  color: #bcd6ff;
+  font-size: 14px;
+  font-weight: bold;
+}
+.scr-admin .adm-initials:hover {
+  text-decoration: none;
+  background: rgba(0, 102, 255, 0.3);
+}
+
+/* the menu's scrollbar: hidden until you scroll or hover, then fades out after 5 seconds */
+.scr-admin .adm-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.scr-admin .adm-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.scr-admin .adm-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scr-admin .adm-scroll::-webkit-scrollbar-thumb {
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0);
+  transition: background 0.7s ease;
+}
+.scr-admin .adm-scroll.show::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.28);
+}
+@supports (-moz-appearance: none) {
+  .scr-admin .adm-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  .scr-admin .adm-scroll.show {
+    scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+  }
+}
+
+/* computers: the panel is pinned, the page scrolls on its own, the panel can collapse */
+@media (min-width: 821px) {
+  .scr-admin.adm-layout {
+    display: flex;
+    flex-wrap: nowrap;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  .scr-admin .adm-side {
+    flex: 0 0 248px;
+    width: 248px;
+    height: 100%;
+    transition:
+      width 0.25s ease,
+      flex-basis 0.25s ease,
+      padding 0.25s ease;
+  }
+  .scr-admin .adm-collapse {
+    display: flex;
+  }
+  .scr-admin .adm-content {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 100%;
+    overflow-y: auto;
+  }
+  .scr-admin.collapsed .adm-side {
+    flex-basis: 72px;
+    width: 72px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .scr-admin.collapsed .adm-brand {
+    justify-content: center;
+    padding: 4px 0 18px;
+  }
+  .scr-admin.collapsed .adm-logo,
+  .scr-admin.collapsed .nav-label {
+    display: none;
+  }
+  .scr-admin.collapsed .nav-item {
+    justify-content: center;
+    padding: 11px 0;
+  }
+  .scr-admin.collapsed .nav-group {
+    padding: 0 !important;
+    height: 1px;
+    margin: 8px 10px;
+    background: #1c1c1c;
+    overflow: hidden;
+  }
+  .scr-admin.collapsed .nav-group span {
+    display: none;
+  }
+  .scr-admin.collapsed .nav-badge {
+    position: absolute;
+    top: 3px;
+    right: 6px;
+    min-width: 16px !important;
+    padding: 0 4px !important;
+    font-size: 10px !important;
+    line-height: 16px;
+  }
+  .scr-admin.collapsed .adm-profile {
+    display: none;
+  }
+  .scr-admin.collapsed .adm-mini {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding-top: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scr-admin .adm-side,
+  .scr-admin .nav-ind.anim,
+  .scr-admin .adm-scroll::-webkit-scrollbar-thumb {
+    transition: none !important;
+  }
 }

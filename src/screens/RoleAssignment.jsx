@@ -1,24 +1,11 @@
 import React from "react";
 import ConfirmDialog, { UnsavedGuard } from "../components/ConfirmDialog.jsx";
 import Toast from "../components/Toast.jsx";
-import { AdminSidebar } from "../components/admin/AdminShell.jsx";
 
 const renderScreen = (v, props) => (
-  <div
-    className="scr-admin scr-roles"
-    style={{
-      minHeight: "1000px",
-      display: "flex",
-      flexWrap: "wrap",
-      background: "#050505",
-      color: "#ffffff",
-      fontFamily: "Arial, Helvetica, sans-serif",
-    }}
-  >
-    <AdminSidebar active="roles" />
+  <div className="scr-roles">
     <main
       style={{
-        flex: "1 1 680px",
         minWidth: "0",
         boxSizing: "border-box",
         padding: "28px 32px 40px",
