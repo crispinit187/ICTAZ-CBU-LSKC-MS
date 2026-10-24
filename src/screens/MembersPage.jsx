@@ -35,7 +35,7 @@ function Field({ label, children }) {
 }
 
 /* Side panel: one member's details with the actions the viewer is allowed to use. */
-function Detail({ id, onClose, onChanged, canDo }) {
+function Detail({ id, onClose, onChanged, onDeleted, canDo }) {
   const [m, setM] = useState(null);
   const [err, setErr] = useState("");
   const [msg, setMsg] = useState("");
@@ -113,6 +113,24 @@ function Detail({ id, onClose, onChanged, canDo }) {
             }),
           "Status is now " + to + ".",
         ),
+    });
+
+  const remove = () =>
+    setAsk({
+      title: "Delete " + m.name + "?",
+      body: "This erases their sign-in, name, email, student number, phone and picture for good. Attendance records and the audit log are kept, without their name. This cannot be undone.",
+      reasonLabel: "Reason (recorded in the audit log)",
+      typeToConfirm: "DELETE",
+      confirmLabel: "Delete account",
+      tone: "danger",
+      run: async (reason) => {
+        const r = await callFunction("admin-delete-account", {
+          member_id: id,
+          reason: reason || "",
+        });
+        if (r.error) return setErr(r.error);
+        onDeleted("Account deleted. The records are kept without the name.");
+      },
     });
 
   const resetPw = () =>
@@ -445,7 +463,17 @@ function Detail({ id, onClose, onChanged, canDo }) {
             {canDo.reset && m.status === "Active" && (
               <Btn onClick={resetPw}>Reset password</Btn>
             )}
+            {canDo.del && m.status === "Deactivated" && (
+              <Btn kind="decline" onClick={remove}>
+                Delete account
+              </Btn>
+            )}
           </div>
+          {canDo.del && m.status !== "Deactivated" && (
+            <div style={{ color: T.dim, fontSize: 12, lineHeight: 1.5 }}>
+              To delete this account, deactivate it first.
+            </div>
+          )}
           {m.history && m.history.length > 0 && (
             <div>
               <div
@@ -492,6 +520,118 @@ function Detail({ id, onClose, onChanged, canDo }) {
         />
       )}
     </aside>
+  );
+}
+
+/* Members who asked for their account to be deleted. A Super Admin approves (which deletes) or declines. */
+function DeletionRequests({ onDeleted, refresh }) {
+  const [rows, setRows] = useState([]);
+  const [err, setErr] = useState("");
+  const [ask, setAsk] = useState(null);
+  const load = useCallback(async () => {
+    const r = await rpc("list_deletion_requests");
+    if (r.error) return setErr(r.error);
+    setErr("");
+    setRows(r.data || []);
+  }, []);
+  useEffect(() => {
+    load();
+  }, [load, refresh]);
+  if (rows.length === 0 && !err) return null;
+  const approve = (q) =>
+    setAsk({
+      title: "Delete " + q.name + "?",
+      body: "Their request is approved. They are deactivated and their sign-in, name, email, student number, phone and picture are erased for good. Attendance records and the audit log are kept, without their name. They are emailed.",
+      reasonLabel: "Note (recorded in the audit log)",
+      typeToConfirm: "DELETE",
+      confirmLabel: "Approve and delete",
+      tone: "danger",
+      run: async (reason) => {
+        const r = await callFunction("admin-delete-account", {
+          member_id: q.member_id,
+          reason: reason || "",
+          request_id: q.id,
+        });
+        if (r.error) return setErr(r.error);
+        await load();
+        onDeleted("Account deleted. The records are kept without the name.");
+      },
+    });
+  const decline = (q) =>
+    setAsk({
+      title: "Decline the request from " + q.name + "?",
+      body: "Their account stays as it is. They are emailed the reason you give.",
+      reasonLabel: "Reason (sent to the member)",
+      confirmLabel: "Decline request",
+      tone: "warning",
+      run: async (reason) => {
+        const r = await rpc("decline_deletion_request", {
+          p_id: q.id,
+          p_reason: reason || "",
+        });
+        if (r.error) return setErr(r.error);
+        await load();
+        onDeleted("Request declined.");
+      },
+    });
+  return (
+    <section style={{ ...card, padding: 18 }}>
+      <div style={{ fontWeight: "bold", fontSize: 18, marginBottom: 4 }}>
+        Deletion requests
+      </div>
+      <div style={{ color: T.dim, fontSize: 13, marginBottom: 10 }}>
+        Members who asked for their account to be deleted.
+      </div>
+      {err && (
+        <Notice tone="error" inline>
+          {err}
+        </Notice>
+      )}
+      {rows.map((q) => (
+        <div
+          key={q.id}
+          style={{
+            display: "flex",
+            gap: 12,
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "12px 0",
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+          }}
+        >
+          <div style={{ minWidth: 0, flex: "1 1 240px" }}>
+            <div style={{ fontWeight: "bold" }}>{q.name}</div>
+            <div style={{ color: T.dim, fontSize: 12 }}>
+              {q.student_number} · {q.program || "—"} ·{" "}
+              {new Date(q.created_at).toLocaleDateString("en-GB")}
+            </div>
+            {q.reason && (
+              <div style={{ color: T.muted, fontSize: 13, marginTop: 4 }}>
+                “{q.reason}”
+              </div>
+            )}
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Btn kind="decline" onClick={() => approve(q)}>
+              Approve and delete
+            </Btn>
+            <Btn onClick={() => decline(q)}>Decline</Btn>
+          </div>
+        </div>
+      ))}
+      {ask && (
+        <ConfirmDialog
+          cfg={ask}
+          onCancel={() => setAsk(null)}
+          onConfirm={(reason) => {
+            const f = ask.run;
+            setAsk(null);
+            f(reason);
+          }}
+        />
+      )}
+    </section>
   );
 }
 
@@ -663,6 +803,7 @@ export default function MembersPage() {
     suspend: can(ctx, "account.suspend"),
     reset: can(ctx, "account.reset_password"),
     create: can(ctx, "account.create"),
+    del: can(ctx, "member.delete"),
   };
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
@@ -671,6 +812,8 @@ export default function MembersPage() {
   const [err, setErr] = useState("");
   const [sel, setSel] = useState(null);
   const [creating, setCreating] = useState(false);
+  const [note, setNote] = useState("");
+  const [tick, setTick] = useState(0);
   const seq = useRef(0);
 
   const load = useCallback(async () => {
@@ -695,6 +838,13 @@ export default function MembersPage() {
     return () => clearTimeout(t);
   }, [load]);
 
+  const deleted = (t) => {
+    setNote(t);
+    setSel(null);
+    setTick((x) => x + 1);
+    load();
+  };
+
   const pages = data ? Math.max(1, Math.ceil(data.total / PAGE)) : 1;
 
   return (
@@ -718,6 +868,10 @@ export default function MembersPage() {
         <Notice tone="warn">Connect the database to see real members.</Notice>
       )}
       {err && <Notice tone="error">{err}</Notice>}
+      {note && <Notice sig={note}>{note}</Notice>}
+      {canDo.del && live() && (
+        <DeletionRequests onDeleted={deleted} refresh={tick} />
+      )}
       {creating && (
         <CreateForm onClose={() => setCreating(false)} onDone={load} />
       )}
@@ -884,6 +1038,7 @@ export default function MembersPage() {
             canDo={canDo}
             onClose={() => setSel(null)}
             onChanged={load}
+            onDeleted={deleted}
           />
         )}
       </div>

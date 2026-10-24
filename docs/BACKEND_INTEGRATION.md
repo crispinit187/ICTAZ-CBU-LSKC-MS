@@ -19,8 +19,9 @@ SQL Editor, in this order, each file once (all are safe to run twice):
 11. `20261022_0011_picture_upload_fix.sql` (fixes picture uploads; run once)
 12. `20261022_0012_reviewer_read_only.sql` (Reviewer read-only access; run once)
 13. `20261022_0013_roles_for_everyone.sql` (roles for any member, Registrar privileges on top; run once, and do not run 0005 again after it)
+14. `20261022_0014_account_deletion.sql` (members can ask to be deleted, Super Admin approves or deletes a Deactivated account; erases the person and keeps the records. Also deploy the Edge Function `admin-delete-account`, and redeploy `send-queued-emails`)
 
-Edge Functions (CLI, `--no-verify-jwt --use-api`): `forgot-password`, `admin-create-user`, `admin-reset-password`, `send-queued-emails`, and redeploy `sign-in`.
+Edge Functions (CLI, `--no-verify-jwt --use-api`): `forgot-password`, `admin-create-user`, `admin-reset-password`, `send-queued-emails`, `admin-delete-account`, and redeploy `sign-in`.
 
 Queued emails: actions write rows to `email_queue`; `send-queued-emails` sends them over SMTP and the app calls it right after the action. It needs the secrets `SMTP_USER` and `SMTP_PASS` (Edge Functions, Secrets). The SMTP settings under Authentication only cover sign-up and reset emails, so they do not give this function its login. Until the secrets exist the function answers 503 and rows stay queued.
 

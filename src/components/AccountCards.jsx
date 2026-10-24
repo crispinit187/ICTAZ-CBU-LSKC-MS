@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Banner, Card } from "./auth/AuthParts.jsx";
 import { supabase } from "../lib/supabase.js";
 import { rpc } from "../lib/api.js";
@@ -379,12 +379,182 @@ function Email({ prof, onSaved }) {
   );
 }
 
+/* Ask for the account to be deleted. A Super Admin decides. The records the chapter needs are kept. */
+function DeleteAccount({ prof, onSaved }) {
+  const [req, setReq] = useState(undefined);
+  const [open, setOpen] = useState(false);
+  const [why, setWhy] = useState("");
+  const [msg, setMsg] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const load = useCallback(async () => {
+    const r = await rpc("my_deletion_request");
+    setReq(r.error ? null : r.data || null);
+  }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
+  if (prof.role === "Super Admin") {
+    return (
+      <Card style={{ marginBottom: 18 }}>
+        <H>Delete my account</H>
+        <p
+          style={{
+            margin: "8px 0 0",
+            color: "#aebfda",
+            fontSize: 14,
+            lineHeight: 1.6,
+          }}
+        >
+          A Super Admin cannot ask for deletion. Ask another Super Admin to
+          remove your Super Admin role first.
+        </p>
+      </Card>
+    );
+  }
+  const send = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    const r = await rpc("request_account_deletion", { p_reason: why });
+    setBusy(false);
+    if (r.error) return setMsg({ tone: "bad", text: r.error });
+    setOpen(false);
+    setWhy("");
+    setMsg(null);
+    await load();
+    onSaved("Your request was sent. A Super Admin will decide it.");
+  };
+  const withdraw = async () => {
+    const r = await rpc("withdraw_deletion_request");
+    if (r.error) return setMsg({ tone: "bad", text: r.error });
+    await load();
+    onSaved("Your request was withdrawn.");
+  };
+  const pending = req && req.status === "Pending";
+  return (
+    <Card style={{ marginBottom: 18 }}>
+      <H>Delete my account</H>
+      <p
+        style={{
+          margin: "8px 0 0",
+          color: "#aebfda",
+          fontSize: 14,
+          lineHeight: 1.6,
+        }}
+      >
+        You can ask for your account to be deleted. A Super Admin decides. If it
+        is approved, your sign-in, name, email, student number, phone and
+        picture are erased for good. Attendance totals stay, without your name.
+        You can register again later as a new member.
+      </p>
+      {msg && <Banner tone={msg.tone}>{msg.text}</Banner>}
+      {pending ? (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ color: "#ffd98a", fontSize: 14, marginBottom: 10 }}>
+            Your request is waiting for a Super Admin.
+          </div>
+          <button
+            type="button"
+            style={{
+              ...btn,
+              background: "transparent",
+              border: "1px solid #333",
+            }}
+            onClick={withdraw}
+          >
+            Withdraw request
+          </button>
+        </div>
+      ) : (
+        <>
+          {req && req.status === "Declined" && (
+            <div
+              style={{
+                marginTop: 12,
+                color: "#ffb3b3",
+                fontSize: 14,
+                lineHeight: 1.6,
+              }}
+            >
+              Your last request was not approved: {req.decided_reason}
+            </div>
+          )}
+          {!open ? (
+            <button
+              type="button"
+              style={{
+                ...btn,
+                marginTop: 12,
+                background: "rgba(255,107,107,0.1)",
+                border: "1px solid rgba(255,107,107,0.4)",
+                color: "#ffb3b3",
+              }}
+              onClick={() => {
+                setOpen(true);
+                setMsg(null);
+              }}
+            >
+              Ask to delete my account
+            </button>
+          ) : (
+            <form onSubmit={send}>
+              <L t="Why are you leaving? (optional)">
+                <textarea
+                  aria-label="Reason"
+                  rows={3}
+                  maxLength={300}
+                  style={{ ...field, resize: "vertical" }}
+                  value={why}
+                  onChange={(e) => setWhy(e.target.value)}
+                />
+              </L>
+              <div
+                style={{
+                  marginTop: 16,
+                  display: "flex",
+                  gap: 10,
+                  flexWrap: "wrap",
+                }}
+              >
+                <button
+                  type="submit"
+                  disabled={busy}
+                  style={{
+                    ...btn,
+                    background: "rgba(255,107,107,0.1)",
+                    border: "1px solid rgba(255,107,107,0.4)",
+                    color: "#ffb3b3",
+                    opacity: busy ? 0.5 : 1,
+                  }}
+                >
+                  Send request
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    ...btn,
+                    background: "transparent",
+                    border: "1px solid #333",
+                  }}
+                  onClick={() => setOpen(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+        </>
+      )}
+    </Card>
+  );
+}
+
 export default function AccountCards({ prof, onSaved }) {
   return (
     <>
       <Details prof={prof} onSaved={onSaved} />
       <Password prof={prof} onSaved={onSaved} />
       <Email prof={prof} onSaved={onSaved} />
+      <DeleteAccount prof={prof} onSaved={onSaved} />
     </>
   );
 }

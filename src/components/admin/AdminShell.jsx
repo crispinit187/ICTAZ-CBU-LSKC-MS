@@ -28,6 +28,7 @@ const GROUPS = [
         label: "Members",
         to: "/admin/members",
         any: ["member.view"],
+        delBadge: true,
       },
       {
         key: "approvals",
@@ -269,6 +270,19 @@ export function AdminSidebar({ active, pending, accountTop }) {
     };
   }, [pending, canApprove]);
   const badge = pending !== undefined ? pending : count;
+  // Super Admins see how many deletion requests are waiting on the Members item
+  const [delCount, setDelCount] = useState(0);
+  const canDelete = can(auth.ctx, "member.delete");
+  useEffect(() => {
+    if (!live() || !canDelete) return undefined;
+    let on = true;
+    rpc("list_deletion_requests").then(
+      (r) => on && !r.error && setDelCount((r.data || []).length),
+    );
+    return () => {
+      on = false;
+    };
+  }, [canDelete, active]);
   const nav = useNavigate();
   const loc = useLocation();
   const [menu, setMenu] = useState(false);
@@ -370,6 +384,24 @@ export function AdminSidebar({ active, pending, accountTop }) {
                   }
                 >
                   <span>{it.label}</span>
+                  {it.delBadge && delCount > 0 && (
+                    <span
+                      title="Deletion requests waiting"
+                      style={{
+                        minWidth: 22,
+                        padding: "2px 7px",
+                        boxSizing: "border-box",
+                        textAlign: "center",
+                        borderRadius: 20,
+                        background: "#0066ff",
+                        color: "#fff",
+                        fontSize: 12,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {delCount}
+                    </span>
+                  )}
                   {it.badge && badge > 0 && (
                     <span
                       style={{

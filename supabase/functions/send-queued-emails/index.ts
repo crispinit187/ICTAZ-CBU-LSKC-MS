@@ -86,6 +86,10 @@ Deno.serve(async (req: Request) => {
         text,
       });
       await admin.from("email_queue").update({ status: "sent", sent_at: new Date().toISOString(), attempts: r.attempts + 1, last_error: null }).eq("id", r.id);
+      if (r.template_code === "account_deleted") {
+        // the person asked to be erased: do not keep their address or name in the sent row
+        await admin.from("email_queue").update({ to_email: "erased@erased.invalid", payload: {} }).eq("id", r.id);
+      }
       sent++;
     } catch (e) {
       const attempts = r.attempts + 1;
