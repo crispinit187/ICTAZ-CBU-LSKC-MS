@@ -1,4 +1,5 @@
 import React from "react";
+import Toast from "../Toast.jsx";
 
 export const T = {
   bg: "#050505",
@@ -107,7 +108,13 @@ export function Chip({ status, children }) {
   );
 }
 
-export function Notice({ tone = "ok", children }) {
+export function Notice({ tone = "ok", children, inline, sig }) {
+  if (tone !== "warn" && !inline)
+    return (
+      <Toast tone={tone} sig={sig}>
+        {children}
+      </Toast>
+    );
   const tones = {
     ok: ["rgba(61,220,151,0.1)", "rgba(61,220,151,0.4)", "#9df0c8"],
     error: ["rgba(255,107,107,0.1)", "rgba(255,107,107,0.4)", "#ffb3b3"],

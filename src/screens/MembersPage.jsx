@@ -555,7 +555,7 @@ function CreateForm({ onClose, onDone }) {
             gap: 12,
           }}
         >
-          <Notice>
+          <Notice inline>
             Account created and active. Give the member this temporary password
             privately. It is shown once. They choose a new one at first sign-in.
           </Notice>
@@ -573,7 +573,11 @@ function CreateForm({ onClose, onDone }) {
             gap: 12,
           }}
         >
-          {err && <Notice tone="error">{err}</Notice>}
+          {err && (
+            <Notice tone="error" inline>
+              {err}
+            </Notice>
+          )}
           <Field label="Full name">
             <input
               required

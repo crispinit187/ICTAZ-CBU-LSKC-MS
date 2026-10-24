@@ -342,7 +342,11 @@ export default function SettingsPage() {
           </button>
         ))}
       </div>
-      {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
+      {msg && (
+        <Notice tone={msg.tone} sig={msg}>
+          {msg.text}
+        </Notice>
+      )}
       {!live() && (
         <Notice tone="warn">Connect the database to change settings.</Notice>
       )}

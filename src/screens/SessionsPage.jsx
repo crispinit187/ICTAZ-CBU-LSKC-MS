@@ -130,7 +130,11 @@ function SessionForm({ initial, onClose, onSaved }) {
           gap: 12,
         }}
       >
-        {err && <Notice tone="error">{err}</Notice>}
+        {err && (
+          <Notice tone="error" inline>
+            {err}
+          </Notice>
+        )}
         <Field label="Title">
           <input
             required

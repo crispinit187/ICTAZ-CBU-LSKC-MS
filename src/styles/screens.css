@@ -28,7 +28,7 @@
 .scr-admin .btn-ghost:hover {
   border-color: #54adff;
 }
-.scr-admin .btn-approve:hover {
+.scr-admin .btn-approve:hover:not(:disabled) {
   background: rgba(61, 220, 151, 0.22);
 }
 .scr-admin .btn-decline:hover {
@@ -452,4 +452,26 @@
   .scr-admin .adm-side {
     transition: none;
   }
+}
+
+/* Pop-up messages: fixed at the top of the screen */
+.toast-pop {
+  position: fixed;
+  top: 12px;
+  left: 0;
+  right: 0;
+  z-index: 3000;
+  padding: 0 16px;
+  pointer-events: none;
+  animation: toast-in 0.2s ease-out;
+}
+.toast-pop > div {
+  pointer-events: auto;
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast-pop { animation: none; }
 }

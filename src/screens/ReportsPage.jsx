@@ -72,7 +72,11 @@ export default function ReportsPage() {
       title="Reports and exports"
       subtitle="Files open in Excel. Every export is recorded in the audit log."
     >
-      {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
+      {msg && (
+        <Notice tone={msg.tone} sig={msg}>
+          {msg.text}
+        </Notice>
+      )}
       {!live() && (
         <Notice tone="warn">Connect the database to export data.</Notice>
       )}

@@ -1,6 +1,7 @@
 import React from "react";
 import { actionText, ago } from "../lib/api.js";
 import ConfirmDialog, { UnsavedGuard } from "../components/ConfirmDialog.jsx";
+import Toast from "../components/Toast.jsx";
 import {
   AccountMenu,
   AdminSidebar,
@@ -133,21 +134,9 @@ const renderScreen = (v, props) => (
         </div>
       </header>
       {v.toast && (
-        <>
-          <div
-            role="status"
-            style={{
-              padding: "12px 16px",
-              borderRadius: "10px",
-              background: "rgba(61,220,151,0.1)",
-              border: "1px solid rgba(61,220,151,0.4)",
-              color: "#9df0c8",
-              fontSize: "14px",
-            }}
-          >
-            {v.toast}
-          </div>
-        </>
+        <Toast tone={v.toastBad ? "error" : "ok"} sig={v.toastSig}>
+          {v.toast}
+        </Toast>
       )}
       <section
         className="adm-tiles"
@@ -724,6 +713,17 @@ const renderScreen = (v, props) => (
                     {r.email && r.method ? " · " : ""}
                     {r.method}
                   </div>
+                  {v.canApprove && !r.verified && (
+                    <div
+                      style={{
+                        marginTop: "2px",
+                        color: "#ffb020",
+                        fontSize: "12px",
+                      }}
+                    >
+                      Email not confirmed
+                    </div>
+                  )}
                 </div>
                 <span
                   style={{
@@ -747,7 +747,12 @@ const renderScreen = (v, props) => (
                       className="btn-approve"
                       type="button"
                       onClick={r.approve}
+                      disabled={!r.verified}
+                      title={
+                        r.verified ? "" : "They must confirm their email first"
+                      }
                       style={{
+                        opacity: r.verified ? 1 : 0.5,
                         flex: "1",
                         padding: "9px 12px",
                         borderRadius: "8px",
@@ -757,7 +762,7 @@ const renderScreen = (v, props) => (
                         fontFamily: "inherit",
                         fontSize: "13px",
                         fontWeight: "bold",
-                        cursor: "pointer",
+                        cursor: r.verified ? "pointer" : "not-allowed",
                       }}
                     >
                       Approve
@@ -1202,6 +1207,7 @@ class Screen extends React.Component {
           no: "20481133",
           email: "mwila.b@gmail.com",
           method: "Google",
+          verified: true,
           prog: "Computer Engineering",
           year: "2,1",
         },
@@ -1267,6 +1273,8 @@ class Screen extends React.Component {
         : real.onDecline(r.id, reason);
       call.then((err) =>
         this.setState({
+          toastN: Date.now(),
+          toastBad: !!err,
           toast: err
             ? err
             : approved
@@ -1281,6 +1289,8 @@ class Screen extends React.Component {
     const q = this.state.queue.filter((x) => x.id !== r.id);
     this.setState({
       queue: q,
+      toastN: Date.now(),
+      toastBad: false,
       toast: approved
         ? "Approved " + r.name + ". They have been emailed and can sign in now."
         : "Declined " +
@@ -1312,6 +1322,7 @@ class Screen extends React.Component {
       no: r.student_number,
       email: r.email,
       method: !r.method ? "" : r.method === "google" ? "Google" : "Password",
+      verified: !!r.email_verified,
       prog: r.program || "—",
       year: (r.year_of_study || "—") + "," + (r.semester_of_study || "—"),
     }));
@@ -1337,6 +1348,8 @@ class Screen extends React.Component {
       pendingCount: Number(d.pending_count || 0),
       sidebarPending: Number(d.pending_count || 0),
       toast: s.toast,
+      toastBad: s.toastBad,
+      toastSig: s.toastN,
       livePresent: present,
       livePct: pct,
       liveWidth: Math.min(100, pct),
@@ -1418,6 +1431,7 @@ class Screen extends React.Component {
     }));
     const queue = s.queue.map((r) =>
       Object.assign({}, r, {
+        verified: true,
         approve: () => this.act(r, true),
         decline: () => this.act(r, false),
       }),
@@ -1454,6 +1468,8 @@ class Screen extends React.Component {
       displayPath: "/display",
       showExport: true,
       toast: s.toast,
+      toastBad: s.toastBad,
+      toastSig: s.toastN,
       livePresent: s.present,
       livePct: pct,
       liveWidth: Math.min(100, pct),
@@ -1541,6 +1557,8 @@ class Screen extends React.Component {
           if (this.props.real) {
             this.props.real.onClose(v.openId).then((err) =>
               this.setState({
+                toastN: Date.now(),
+                toastBad: !!err,
                 toast:
                   err ||
                   "Attendance window closed for " +
@@ -1552,6 +1570,8 @@ class Screen extends React.Component {
           }
           this.setState({
             windowClosed: true,
+            toastN: Date.now(),
+            toastBad: false,
             toast:
               "Attendance window closed for Weekly Chapter Meeting. The change is in the audit log.",
           });

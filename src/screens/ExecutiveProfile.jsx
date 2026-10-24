@@ -3,11 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   AuthPage,
   BackLink,
-  Banner,
   Card,
   Eyebrow,
 } from "../components/auth/AuthParts.jsx";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
+import Toast from "../components/Toast.jsx";
 import { Splash } from "../auth/guards.jsx";
 import AccountCards from "../components/AccountCards.jsx";
 import { homeFor, useAuth } from "../auth/AuthProvider.jsx";
@@ -326,7 +326,11 @@ export default function ExecutiveProfile() {
       </h1>
 
       <div aria-live="polite">
-        {toast && <Banner tone={toast.tone}>{toast.text}</Banner>}
+        {toast && (
+          <Toast tone={toast.tone === "bad" ? "error" : toast.tone} sig={toast}>
+            {toast.text}
+          </Toast>
+        )}
       </div>
 
       <Card style={{ marginBottom: 18 }}>

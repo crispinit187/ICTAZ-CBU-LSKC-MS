@@ -1,5 +1,6 @@
 import React from "react";
 import ConfirmDialog, { UnsavedGuard } from "../components/ConfirmDialog.jsx";
+import Toast from "../components/Toast.jsx";
 import { AdminSidebar } from "../components/admin/AdminShell.jsx";
 
 const renderScreen = (v, props) => (
@@ -45,22 +46,9 @@ const renderScreen = (v, props) => (
         </p>
       </header>
       {v.toast && (
-        <>
-          <div
-            role="status"
-            style={{
-              padding: "12px 16px",
-              borderRadius: "10px",
-              background: v.toastBg,
-              border: `1px solid ${v.toastBorder}`,
-              color: v.toastColor,
-              fontSize: "14px",
-              lineHeight: "1.5",
-            }}
-          >
-            {v.toast}
-          </div>
-        </>
+        <Toast tone={v.toastKind} sig={v.toastSig}>
+          {v.toast}
+        </Toast>
       )}
       <section
         style={{
@@ -624,22 +612,12 @@ class Screen extends React.Component {
     };
     notes.Registrar +=
       " Can be added on top of another role, which adds the Registrar mode section.";
-    const tone = {
-      ok: ["rgba(61,220,151,0.1)", "rgba(61,220,151,0.4)", "#9df0c8"],
-      info: ["rgba(84,173,255,0.1)", "rgba(84,173,255,0.4)", "#bcd6ff"],
-      error: ["rgba(255,107,107,0.1)", "rgba(255,107,107,0.4)", "#ffb3b3"],
-    }[s.toastKind] || [
-      "rgba(61,220,151,0.1)",
-      "rgba(61,220,151,0.4)",
-      "#9df0c8",
-    ];
     return {
       staff: staff,
       staffCount: s.people.filter((p) => p.roles.length).length,
       toast: s.toast,
-      toastBg: tone[0],
-      toastBorder: tone[1],
-      toastColor: tone[2],
+      toastKind: s.toastKind,
+      toastSig: s.toastN,
       real: !!this.props.real,
       sampleNote: this.props.real ? "" : " Sample data.",
       search: s.search || "",
@@ -703,8 +681,8 @@ class Screen extends React.Component {
         : await r.assignRole(p.id, role, reason);
     this.setState(
       err
-        ? { toast: err, toastKind: "error" }
-        : { toast: msg, toastKind: kind },
+        ? { toast: err, toastKind: "error", toastN: Date.now() }
+        : { toast: msg, toastKind: kind, toastN: Date.now() },
     );
   }
   setRole(id, role, msg, kind, clearPosition) {
@@ -717,7 +695,12 @@ class Screen extends React.Component {
           })
         : p,
     );
-    this.setState({ people: people, toast: msg, toastKind: kind });
+    this.setState({
+      people: people,
+      toast: msg,
+      toastKind: kind,
+      toastN: Date.now(),
+    });
   }
 
   ask = (cfg) => this.setState({ confirm: cfg });
