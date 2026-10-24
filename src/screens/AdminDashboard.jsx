@@ -1278,7 +1278,9 @@ class Screen extends React.Component {
           toast: err
             ? err
             : approved
-              ? "Approved " + r.name + ". They can sign in now."
+              ? "Approved " +
+                r.name +
+                ". They have been emailed and can sign in now."
               : "Declined " + r.name + ". The decision is in the audit log.",
         }),
       );
@@ -1290,8 +1292,10 @@ class Screen extends React.Component {
       toastN: Date.now(),
       toastBad: false,
       toast: approved
-        ? "Approved " + r.name + ". They can sign in now."
-        : "Declined " + r.name + ". The decision is in the audit log.",
+        ? "Approved " + r.name + ". They have been emailed and can sign in now."
+        : "Declined " +
+          r.name +
+          ". The reason has been emailed to them and the decision is in the audit log.",
     });
   }
   realVals() {
@@ -1578,7 +1582,7 @@ class Screen extends React.Component {
       q.decline = () =>
         this.ask({
           title: "Decline " + q.name + "?",
-          body: "Their registration is declined and the reason you give is recorded. They cannot sign in.",
+          body: "Their registration is declined and they are emailed the reason you give. They cannot sign in.",
           reasonLabel: "Reason (sent to the member)",
           confirmLabel: "Decline registration",
           tone: "danger",

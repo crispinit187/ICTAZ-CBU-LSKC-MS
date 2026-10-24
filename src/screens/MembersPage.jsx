@@ -405,7 +405,7 @@ function Detail({ id, onClose, onChanged, canDo }) {
                   status(
                     "Suspended",
                     "Suspend " + m.name + "?",
-                    "They cannot sign in until reactivated. The reason is recorded in the audit log.",
+                    "They cannot sign in until reactivated. They are emailed the reason.",
                     "danger",
                   )
                 }

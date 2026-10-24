@@ -230,7 +230,8 @@ const renderScreen = (v, props) => (
               lineHeight: "1.55",
             }}
           >
-            The change is saved in the audit log with your reason.
+            The person is emailed, and the change is saved in the audit log with
+            your reason.
           </p>
           <div style={{ marginBottom: "16px" }}>
             <label
@@ -434,7 +435,7 @@ const renderScreen = (v, props) => (
         </strong>
         <br />
         {
-          " A role does not depend on being an executive, and it is not removed when an executive profile ends. It stays until a Super Admin removes it, and it is recorded in the audit log. Super Admin and Administrator already include Registrar duties. Adding Registrar privileges to a Reviewer gives them the Registrar mode section in the side panel. "
+          " A role does not depend on being an executive, and it is not removed when an executive profile ends. It stays until a Super Admin removes it, and the person is emailed. Super Admin and Administrator already include Registrar duties. Adding Registrar privileges to a Reviewer gives them the Registrar mode section in the side panel. "
         }
       </section>
     </main>
@@ -571,7 +572,7 @@ class Screen extends React.Component {
                 label +
                 " role from " +
                 p.name +
-                ". The change is in the audit log.";
+                ". They have been emailed and the change is in the audit log.";
               return this.props.real
                 ? this.setRoleReal(p, "Member", msg, "ok", reason, false, role)
                 : this.setRole(p.id, role, msg, "ok");
@@ -652,7 +653,7 @@ class Screen extends React.Component {
           this.state.selRole +
           " role to " +
           cur.name +
-          ". The change is in the audit log.";
+          ". They have been emailed and the change is in the audit log.";
         if (this.props.real)
           this.setRoleReal(
             cur,
@@ -723,7 +724,7 @@ class Screen extends React.Component {
             title: "Remove the " + it.role + " role?",
             body:
               p.name +
-              " loses this role straight away. The change is recorded in the audit log.",
+              " loses this role straight away and is emailed. The change is recorded in the audit log.",
             confirmLabel: "Remove role",
             reasonLabel: this.props.real
               ? "Reason (recorded in the audit log)"

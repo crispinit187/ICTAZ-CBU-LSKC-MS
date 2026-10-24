@@ -150,7 +150,7 @@ export default function ResetPassword() {
       ["rgba(61,220,151,0.12)", "rgba(61,220,151,0.5)", "#3ddc97"],
       "M5 12.5l4.5 4.5L19 7.5",
       "Password changed",
-      "Your other sessions were signed out. Sign in with your new password.",
+      "Your other sessions were signed out and we emailed you a notice. Sign in with your new password.",
       <PrimaryButton type="button" onClick={() => nav("/login")}>
         Sign in
       </PrimaryButton>,
