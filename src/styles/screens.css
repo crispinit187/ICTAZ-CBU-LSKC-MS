@@ -380,6 +380,58 @@
     width: 100% !important;
   }
 }
+/* Waiting registrations on a phone: each person is a small card */
+@media (max-width: 820px) {
+  .scr-admin .q-head {
+    display: none !important;
+  }
+  .scr-admin .q-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 6px !important;
+    align-items: start !important;
+    padding: 14px 4px !important;
+  }
+  .scr-admin .q-actions {
+    width: 100% !important;
+    margin-top: 6px;
+  }
+  .scr-admin .q-actions button {
+    min-height: 44px;
+  }
+}
+/* Approvals list on a phone: one card per person instead of a wide table */
+@media (max-width: 820px) {
+  .scr-admin .appr-table {
+    min-width: 0 !important;
+    display: block;
+  }
+  .scr-admin .appr-table thead {
+    display: none;
+  }
+  .scr-admin .appr-table tbody {
+    display: block;
+  }
+  .scr-admin .appr-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .scr-admin .appr-row td {
+    display: block;
+    padding: 0 !important;
+    border: none !important;
+    text-align: left !important;
+    white-space: normal !important;
+  }
+  .scr-admin .appr-row td:last-child {
+    margin-top: 8px;
+  }
+  .scr-admin .appr-row td:last-child button {
+    min-height: 44px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .scr-admin .adm-side {
     transition: none;

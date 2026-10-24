@@ -112,6 +112,7 @@ export default function ApprovalsPage() {
       </div>
       <section style={{ ...card, padding: 8, overflowX: "auto" }}>
         <table
+          className="appr-table"
           style={{ width: "100%", borderCollapse: "collapse", minWidth: 760 }}
         >
           <thead>
@@ -127,7 +128,7 @@ export default function ApprovalsPage() {
           </thead>
           <tbody>
             {(rows || []).map((r) => (
-              <tr key={r.id}>
+              <tr key={r.id} className="appr-row">
                 <td style={td}>
                   <div style={{ fontWeight: "bold" }}>{r.name}</div>
                   {r.email && (

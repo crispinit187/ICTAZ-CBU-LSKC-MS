@@ -672,6 +672,7 @@ const renderScreen = (v, props) => (
             needs a reason.
           </p>
           <div
+            className="q-head"
             style={{
               display: "grid",
               gridTemplateColumns:
@@ -693,6 +694,7 @@ const renderScreen = (v, props) => (
           {v.queue.map((r, $i) => (
             <React.Fragment key={$i}>
               <div
+                className="q-row"
                 style={{
                   display: "grid",
                   gridTemplateColumns:
@@ -714,7 +716,7 @@ const renderScreen = (v, props) => (
                     }}
                   >
                     {r.email}
-                    {" · "}
+                    {r.email && r.method ? " · " : ""}
                     {r.method}
                   </div>
                 </div>
@@ -732,7 +734,10 @@ const renderScreen = (v, props) => (
                   {r.year}
                 </span>
                 {v.canApprove ? (
-                  <div style={{ display: "flex", gap: "8px", width: "170px" }}>
+                  <div
+                    className="q-actions"
+                    style={{ display: "flex", gap: "8px", width: "170px" }}
+                  >
                     <button
                       className="btn-approve"
                       type="button"
