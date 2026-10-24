@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import RegistrarMarking from "./RegistrarMarking.jsx";
 import { Splash } from "../auth/guards.jsx";
-import { useAuth } from "../auth/AuthProvider.jsx";
+import { can, useAuth } from "../auth/AuthProvider.jsx";
+import BackButton from "../components/BackButton.jsx";
 import { live, rpc } from "../lib/api.js";
 import { whenText } from "../lib/format.js";
 
@@ -98,6 +99,9 @@ export default function RegistrarPage() {
     if (await auth.leave()) return;
     nav("/login", { replace: true });
   };
+  // people who can reach the dashboard go back to it; others keep Sign out
+  const canDashboard = can(auth.ctx, "analytics.view");
+  const canScan = can(auth.ctx, "attendance.scan");
 
   if (!sessions.length)
     return (
@@ -123,37 +127,53 @@ export default function RegistrarPage() {
           When an Administrator opens a session it appears here. Closed sessions
           stay here for 12 hours.
         </p>
-        <div style={{ display: "flex", gap: 14 }}>
-          <button
-            type="button"
-            onClick={() => nav("/scan")}
-            style={{
-              padding: "10px 16px",
-              background: "transparent",
-              color: "#fff",
-              border: "1px solid #333",
-              borderRadius: 8,
-              cursor: "pointer",
-              fontWeight: "bold",
-            }}
-          >
-            Scan my own attendance
-          </button>
-          <button
-            type="button"
-            onClick={signOut}
-            style={{
-              padding: "10px 16px",
-              background: "transparent",
-              color: "#fff",
-              border: "1px solid #333",
-              borderRadius: 8,
-              cursor: "pointer",
-              fontWeight: "bold",
-            }}
-          >
-            Sign out
-          </button>
+        <div
+          style={{
+            display: "flex",
+            gap: 14,
+            flexWrap: "wrap",
+            justifyContent: "center",
+          }}
+        >
+          {canDashboard && (
+            <BackButton onClick={() => nav("/admin")}>
+              Back to dashboard
+            </BackButton>
+          )}
+          {canScan && (
+            <button
+              type="button"
+              onClick={() => nav("/scan")}
+              style={{
+                padding: "10px 16px",
+                background: "transparent",
+                color: "#fff",
+                border: "1px solid #333",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: "bold",
+              }}
+            >
+              Scan my own attendance
+            </button>
+          )}
+          {!canDashboard && (
+            <button
+              type="button"
+              onClick={signOut}
+              style={{
+                padding: "10px 16px",
+                background: "transparent",
+                color: "#fff",
+                border: "1px solid #333",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: "bold",
+              }}
+            >
+              Sign out
+            </button>
+          )}
         </div>
       </div>
     );
@@ -161,6 +181,8 @@ export default function RegistrarPage() {
   const session = sessions.find((x) => x.id === sid) || sessions[0];
   const real = {
     userName: auth.ctx ? auth.ctx.name : "",
+    canDashboard,
+    canScan,
     sessions,
     session,
     when: whenText(session.start_at, session.end_at, session.venue),

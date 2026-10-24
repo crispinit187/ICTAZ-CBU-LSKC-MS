@@ -25,7 +25,7 @@ import ReportsPage from "./screens/ReportsPage.jsx";
 import AuditPage from "./screens/AuditPage.jsx";
 import SettingsPage from "./screens/SettingsPage.jsx";
 import RegistrarPage from "./screens/RegistrarPage.jsx";
-import QrDisplayPage from "./screens/QrDisplayPage.jsx";
+import QrDisplayPage, { BackHome } from "./screens/QrDisplayPage.jsx";
 import MemberScan from "./screens/MemberScan.jsx";
 import RoleAssignmentPage from "./screens/RoleAssignmentPage.jsx";
 import RegisterScreen from "./screens/RegisterScreen.jsx";
@@ -161,9 +161,14 @@ function Scan() {
 function Display() {
   const [params] = useSearchParams();
   return (
-    <FitStage width={1440} height={810}>
-      <QrDisplayPage demoSeconds={Number(params.get("seconds")) || 12} />
-    </FitStage>
+    <>
+      <FitStage width={1440} height={810}>
+        <QrDisplayPage demoSeconds={Number(params.get("seconds")) || 12} />
+      </FitStage>
+      <div style={{ position: "fixed", left: 16, bottom: 16, zIndex: 20 }}>
+        <BackHome />
+      </div>
+    </>
   );
 }
 

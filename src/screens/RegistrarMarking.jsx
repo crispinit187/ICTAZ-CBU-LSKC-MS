@@ -1,5 +1,6 @@
 import React from "react";
 import ConfirmDialog, { UnsavedGuard } from "../components/ConfirmDialog.jsx";
+import BackButton from "../components/BackButton.jsx";
 
 const renderScreen = (v, props) => (
   <div
@@ -28,8 +29,12 @@ const renderScreen = (v, props) => (
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+        {v.canDashboard && (
+          <BackButton onClick={v.goDash}>Back to dashboard</BackButton>
+        )}
         <a
           href="#"
+          onClick={v.canDashboard ? v.goDash : (e) => e.preventDefault()}
           style={{
             fontSize: "21px",
             fontWeight: "bold",
@@ -63,13 +68,17 @@ const renderScreen = (v, props) => (
           fontWeight: "600",
         }}
       >
-        <a href="#scan" onClick={v.goScan} style={{ color: "#aaaaaa" }}>
-          Scan my own attendance
-        </a>
+        {v.canScan && (
+          <a href="#scan" onClick={v.goScan} style={{ color: "#aaaaaa" }}>
+            Scan my own attendance
+          </a>
+        )}
         <span style={{ color: "#aebfda" }}>{v.userName}</span>
-        <a href="#" onClick={v.signOut}>
-          Sign out
-        </a>
+        {!v.canDashboard && (
+          <a href="#" onClick={v.signOut}>
+            Sign out
+          </a>
+        )}
       </div>
     </nav>
     <main
@@ -932,6 +941,12 @@ class Screen extends React.Component {
       sessionId: real ? real.session.id : "",
       onSession: (e) => real.onSession(e.target.value),
       errorText: s.errorText || "",
+      canDashboard: real ? !!real.canDashboard : true,
+      canScan: real ? !!real.canScan : true,
+      goDash: (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (this.props.onNavigate) this.props.onNavigate("/admin");
+      },
       goScan: (e) => {
         e.preventDefault();
         if (this.props.onNavigate) this.props.onNavigate("/scan");

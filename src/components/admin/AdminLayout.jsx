@@ -78,6 +78,24 @@ function activeKeyFor(path) {
   return key;
 }
 
+/* A scrollbar that shows while you scroll or hover and fades out after 5 seconds. */
+function useFadingBar() {
+  const [on, setOn] = useState(false);
+  const timer = useRef(null);
+  const poke = useCallback(() => {
+    setOn(true);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setOn(false), 5000);
+  }, []);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  return {
+    className: "adm-scroll" + (on ? " show" : ""),
+    onScroll: poke,
+    onMouseMove: poke,
+    onMouseEnter: poke,
+  };
+}
+
 const badgeStyle = {
   minWidth: 22,
   padding: "2px 7px",
@@ -146,15 +164,7 @@ function Sidebar({ active, pending, accountTop, collapsed, onToggle }) {
       .map((w) => w[0].toUpperCase())
       .join("") || "?";
 
-  // scrollbar of the menu: shows while scrolling or hovering, fades out after 5 seconds
-  const [bar, setBar] = useState(false);
-  const barTimer = useRef(null);
-  const poke = useCallback(() => {
-    setBar(true);
-    clearTimeout(barTimer.current);
-    barTimer.current = setTimeout(() => setBar(false), 5000);
-  }, []);
-  useEffect(() => () => clearTimeout(barTimer.current), []);
+  const navBar = useFadingBar();
 
   // the blue highlight: one shape that glides to the page being opened
   const navRef = useRef(null);
@@ -289,11 +299,11 @@ function Sidebar({ active, pending, accountTop, collapsed, onToggle }) {
         </div>
         <nav
           ref={navRef}
-          className={"adm-nav adm-scroll" + (bar ? " show" : "")}
+          className={"adm-nav " + navBar.className}
           aria-label="Management pages"
-          onScroll={poke}
-          onMouseMove={poke}
-          onMouseEnter={poke}
+          onScroll={navBar.onScroll}
+          onMouseMove={navBar.onMouseMove}
+          onMouseEnter={navBar.onMouseEnter}
         >
           <div
             className={
@@ -350,8 +360,11 @@ function Sidebar({ active, pending, accountTop, collapsed, onToggle }) {
             </>
           )}
         </nav>
-        {!accountTop &&
-          (collapsed ? (
+        <div
+          className={"adm-foot" + (accountTop ? " gone" : "")}
+          aria-hidden={accountTop ? "true" : undefined}
+        >
+          {collapsed ? (
             <div className="adm-mini">
               <Link
                 to="/profile"
@@ -419,7 +432,8 @@ function Sidebar({ active, pending, accountTop, collapsed, onToggle }) {
                 Sign out
               </a>
             </div>
-          ))}
+          )}
+        </div>
         {ask && (
           <ConfirmDialog
             cfg={ask}
@@ -444,6 +458,7 @@ export default function AdminLayout() {
   const [pending, setPending] = useState(undefined);
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const content = useRef(null);
+  const pageBar = useFadingBar();
   const toggle = () =>
     setCollapsed((c) => {
       try {
@@ -477,7 +492,13 @@ export default function AdminLayout() {
           collapsed={collapsed}
           onToggle={toggle}
         />
-        <div className="adm-content" ref={content}>
+        <div
+          className={"adm-content " + pageBar.className}
+          ref={content}
+          onScroll={pageBar.onScroll}
+          onMouseMove={pageBar.onMouseMove}
+          onMouseEnter={pageBar.onMouseEnter}
+        >
           <div
             key={trans.shownPath}
             className={"adm-page page-" + (trans.contentPhase || "in")}

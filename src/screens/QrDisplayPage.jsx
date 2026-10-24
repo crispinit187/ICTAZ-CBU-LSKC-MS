@@ -1,8 +1,23 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { can, useAuth } from "../auth/AuthProvider.jsx";
+import BackButton from "../components/BackButton.jsx";
 import QrDisplay from "./QrDisplay.jsx";
 import { live, rpc } from "../lib/api.js";
 import { whenText } from "../lib/format.js";
+
+/* Goes back to the dashboard, or to Mark attendance for a Registrar who has no dashboard. */
+export function BackHome() {
+  const nav = useNavigate();
+  const { ctx } = useAuth();
+  const dash = !ctx || can(ctx, "analytics.view");
+  if (!dash && !can(ctx, "attendance.mark_manual")) return null;
+  return (
+    <BackButton onClick={() => nav(dash ? "/admin" : "/registrar")}>
+      {dash ? "Back to dashboard" : "Back to Mark attendance"}
+    </BackButton>
+  );
+}
 
 function Message({ children }) {
   return (
@@ -87,18 +102,12 @@ export default function QrDisplayPage({ demoSeconds }) {
     return (
       <Message>
         <div>No session is open right now.</div>
-        <Link to="/admin" style={{ color: "#54adff", fontSize: 20 }}>
-          Back to the dashboard
-        </Link>
       </Message>
     );
   if (state === "closed")
     return (
       <Message>
         <div>This session is no longer open.</div>
-        <Link to="/admin" style={{ color: "#54adff", fontSize: 20 }}>
-          Back to the dashboard
-        </Link>
       </Message>
     );
   if (state === "loading" || !info) return <Message>Loading...</Message>;
