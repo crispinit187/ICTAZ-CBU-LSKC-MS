@@ -20,9 +20,9 @@ SQL Editor, in this order, each file once (all are safe to run twice):
 12. `20261022_0012_reviewer_read_only.sql` (Reviewer read-only access; run once)
 13. `20261022_0013_roles_for_everyone.sql` (roles for any member, Registrar privileges on top; run once, and do not run 0005 again after it)
 
-Edge Functions (CLI, `--no-verify-jwt --use-api`): `forgot-password`, `admin-create-user`, `admin-reset-password`, and redeploy `sign-in`.
+Edge Functions (CLI, `--no-verify-jwt --use-api`): `forgot-password`, `admin-create-user`, `admin-reset-password`, `send-queued-emails`, and redeploy `sign-in`.
 
-Not built: sending queued emails (rows are written to `email_queue`; a sender function is still needed), and profile pictures (needs a Storage bucket).
+Queued emails: actions write rows to `email_queue`; `send-queued-emails` sends them over SMTP and the app calls it right after the action. It needs the secrets `SMTP_USER` and `SMTP_PASS` (Edge Functions, Secrets). The SMTP settings under Authentication only cover sign-up and reset emails, so they do not give this function its login. Until the secrets exist the function answers 503 and rows stay queued.
 
 Pages: https://crispinit187.github.io/ICTAZ-CBU-LSKC-MS/ (merge `dev` into `main` to update it).
 

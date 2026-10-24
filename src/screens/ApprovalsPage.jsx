@@ -46,7 +46,7 @@ export default function ApprovalsPage() {
     run(
       r.id,
       () => rpc("approve_registration", { p_id: r.id }),
-      "Approved " + r.name + ". They have been emailed and can sign in now.",
+      "Approved " + r.name + ". They can sign in now.",
     );
   const reopen = (r) =>
     run(
@@ -57,7 +57,7 @@ export default function ApprovalsPage() {
   const decline = (r) =>
     setAsk({
       title: "Decline " + r.name + "?",
-      body: "Their registration is declined and they are emailed the reason you give. They cannot sign in.",
+      body: "Their registration is declined and the reason you give is recorded. They cannot sign in.",
       reasonLabel: "Reason (sent to the member)",
       confirmLabel: "Decline registration",
       tone: "danger",

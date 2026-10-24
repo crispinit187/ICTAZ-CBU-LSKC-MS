@@ -11,6 +11,31 @@ const FRIENDLY = {
   P0002: "That record was not found or has already changed.",
 };
 
+/* Sends any e-mails the last action queued. Quiet: a problem here never disturbs the action. */
+const MAILS = new Set([
+  "approve_registration",
+  "decline_registration",
+  "set_member_status",
+  "assign_role",
+  "remove_role",
+  "note_password_changed",
+]);
+let flushing = false;
+function flushEmails() {
+  if (flushing) return;
+  flushing = true;
+  setTimeout(() => {
+    flushing = false;
+    try {
+      supabase.functions
+        .invoke("send-queued-emails", { body: {} })
+        .catch(() => {});
+    } catch (e) {
+      /* ignore */
+    }
+  }, 1500);
+}
+
 /* Calls a database function. Always resolves to { data, error } where error is plain text. */
 export async function rpc(name, args) {
   if (!live()) return { data: null, error: "Not connected to the database." };
@@ -26,6 +51,7 @@ export async function rpc(name, args) {
         error: error.code === "42501" ? FRIENDLY["42501"] : msg,
       };
     }
+    if (MAILS.has(name)) flushEmails();
     return { data, error: null };
   } catch (e) {
     return { data: null, error: "Could not reach the server. Try again." };
@@ -48,6 +74,8 @@ export async function callFunction(name, body) {
       }
       return { data: null, error: msg };
     }
+    if (name === "admin-create-user" || name === "admin-reset-password")
+      flushEmails();
     return { data, error: null };
   } catch (e) {
     return { data: null, error: "Could not reach the server. Try again." };

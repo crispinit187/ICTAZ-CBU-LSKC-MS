@@ -240,7 +240,7 @@ export default function FirstSignIn() {
             }}
           >
             {needPassword
-              ? "Your password has been changed and your other sessions were signed out. We emailed you a notice. "
+              ? "Your password has been changed and your other sessions were signed out. "
               : ""}
             Your acceptance was recorded with the version and the time.
           </p>
