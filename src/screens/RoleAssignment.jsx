@@ -134,68 +134,64 @@ const renderScreen = (v, props) => (
                   </div>
                 </div>
                 <span style={{ color: "#dce8f8" }}>{p.position}</span>
-                <span
+                <div
                   style={{
-                    justifySelf: "start",
-                    padding: "3px 10px",
-                    borderRadius: "20px",
-                    background: p.chipBg,
-                    border: `1px solid ${p.chipBorder}`,
-                    color: p.chipColor,
-                    fontSize: "12px",
-                    fontWeight: "bold",
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "6px",
+                    justifyContent: "flex-start",
                   }}
                 >
-                  {p.role}
-                </span>
+                  {p.items.map((it, $j) => (
+                    <span
+                      key={$j}
+                      style={{
+                        padding: "3px 10px",
+                        borderRadius: "20px",
+                        background: it.chipBg,
+                        border: `1px solid ${it.chipBorder}`,
+                        color: it.chipColor,
+                        fontSize: "12px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {it.role}
+                    </span>
+                  ))}
+                </div>
                 <div
                   className="roles-actions"
-                  style={{ display: "flex", gap: "8px", width: "190px" }}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                    width: "190px",
+                  }}
                 >
-                  <button
-                    className="btn-danger"
-                    type="button"
-                    disabled={p.removeDisabled}
-                    onClick={p.remove}
-                    title={p.removeTitle}
-                    style={{
-                      flex: "1",
-                      padding: "9px 10px",
-                      borderRadius: "8px",
-                      background: "rgba(255,107,107,0.1)",
-                      border: "1px solid rgba(255,107,107,0.4)",
-                      color: "#ffb3b3",
-                      fontFamily: "inherit",
-                      fontSize: "13px",
-                      fontWeight: "bold",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Remove role
-                  </button>
-                  {p.canEnd && (
-                    <>
-                      <button
-                        className="btn-ghost"
-                        type="button"
-                        onClick={p.endProfile}
-                        style={{
-                          flex: "1",
-                          padding: "9px 10px",
-                          border: "1px solid #333333",
-                          borderRadius: "8px",
-                          background: "transparent",
-                          color: "#ffffff",
-                          fontFamily: "inherit",
-                          fontSize: "12px",
-                          fontWeight: "bold",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Demo: end profile
-                      </button>
-                    </>
-                  )}
+                  {p.items.map((it, $j) => (
+                    <button
+                      key={$j}
+                      className="btn-danger"
+                      type="button"
+                      disabled={it.removeDisabled}
+                      onClick={it.remove}
+                      title={it.removeTitle}
+                      style={{
+                        padding: "9px 10px",
+                        borderRadius: "8px",
+                        background: "rgba(255,107,107,0.1)",
+                        border: "1px solid rgba(255,107,107,0.4)",
+                        color: "#ffb3b3",
+                        fontFamily: "inherit",
+                        fontSize: "13px",
+                        fontWeight: "bold",
+                        cursor: it.removeDisabled ? "not-allowed" : "pointer",
+                        opacity: it.removeDisabled ? 0.5 : 1,
+                      }}
+                    >
+                      {p.items.length > 1 ? "Remove " + it.role : "Remove role"}
+                    </button>
+                  ))}
                 </div>
               </div>
             </React.Fragment>
@@ -547,44 +543,43 @@ class Screen extends React.Component {
       "rgba(255,255,255,0.18)",
       "#dce8f8",
     ];
-    const staffRows = [];
-    s.people.forEach((p) => {
-      p.roles.forEach((role) => staffRows.push({ p: p, role: role }));
-    });
     const superCount = s.people.filter((p) =>
       p.roles.includes("Super Admin"),
     ).length;
-    const staff = staffRows.map(({ p, role }) => {
-      const c = colors[role] || plain;
-      const lastSuper = role === "Super Admin" && superCount <= 1;
-      const addOn = role === "Registrar" && p.roles.length > 1;
-      return {
+    const staff = s.people
+      .filter((p) => p.roles.length)
+      .map((p) => ({
         name: p.name,
         no: p.no,
         position: p.position || "Not an executive",
-        role: addOn ? "Registrar privileges" : role,
-        chipBg: c[0],
-        chipBorder: c[1],
-        chipColor: c[2],
-        removeDisabled: lastSuper,
-        removeTitle: lastSuper
-          ? "The last Active Super Admin cannot be removed"
-          : "Remove this role",
-        canEnd: false,
-        remove: (reason) => {
-          const msg =
-            "Removed the " +
-            (addOn ? "Registrar privileges" : role) +
-            " role from " +
-            p.name +
-            ". They have been emailed and the change is in the audit log.";
-          return this.props.real
-            ? this.setRoleReal(p, "Member", msg, "ok", reason, false, role)
-            : this.setRole(p.id, role, msg, "ok");
-        },
-        endProfile: () => {},
-      };
-    });
+        items: p.roles.map((role) => {
+          const c = colors[role] || plain;
+          const lastSuper = role === "Super Admin" && superCount <= 1;
+          const addOn = role === "Registrar" && p.roles.length > 1;
+          const label = addOn ? "Registrar privileges" : role;
+          return {
+            role: label,
+            chipBg: c[0],
+            chipBorder: c[1],
+            chipColor: c[2],
+            removeDisabled: lastSuper,
+            removeTitle: lastSuper
+              ? "The last Active Super Admin cannot be removed"
+              : "Remove " + label,
+            remove: (reason) => {
+              const msg =
+                "Removed the " +
+                label +
+                " role from " +
+                p.name +
+                ". They have been emailed and the change is in the audit log.";
+              return this.props.real
+                ? this.setRoleReal(p, "Member", msg, "ok", reason, false, role)
+                : this.setRole(p.id, role, msg, "ok");
+            },
+          };
+        }),
+      }));
     const cur = s.people.find((p) => String(p.id) === s.selMember) ||
       (this.props.real && s.people.find((p) => p.roles.length === 0)) ||
       s.people[0] || {
@@ -722,20 +717,22 @@ class Screen extends React.Component {
       });
     };
     v.staff.forEach((p) => {
-      const rm = p.remove;
-      p.remove = () =>
-        this.ask({
-          title: "Remove the " + p.role + " role?",
-          body:
-            p.name +
-            " loses this role straight away and is emailed. The change is recorded in the audit log.",
-          confirmLabel: "Remove role",
-          reasonLabel: this.props.real
-            ? "Reason (recorded in the audit log)"
-            : undefined,
-          tone: "danger",
-          run: rm,
-        });
+      p.items.forEach((it) => {
+        const rm = it.remove;
+        it.remove = () =>
+          this.ask({
+            title: "Remove the " + it.role + " role?",
+            body:
+              p.name +
+              " loses this role straight away and is emailed. The change is recorded in the audit log.",
+            confirmLabel: "Remove role",
+            reasonLabel: this.props.real
+              ? "Reason (recorded in the audit log)"
+              : undefined,
+            tone: "danger",
+            run: rm,
+          });
+      });
     });
     const doAssign = v.assign;
     v.assign = () => {
