@@ -739,7 +739,7 @@ class Screen extends React.Component {
       const role = this.state.selRole;
       if (role === "Administrator" || role === "Super Admin") {
         const who = (
-          this.people().find((p) => String(p.id) === this.state.selMember) ||
+          this.people().find((p) => String(p.id) === v.selMember) ||
           this.people()[0] || { name: "them" }
         ).name;
         this.ask({
