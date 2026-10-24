@@ -536,7 +536,7 @@ export default function ExecutivesPage() {
                         onClick={() =>
                           setAsk({
                             title: "End " + r.name + " as " + r.position + "?",
-                            body: "Their executive profile ends today, and any Registrar, Reviewer or Administrator role they hold is removed automatically.",
+                            body: "Their executive profile ends today. Any role they hold stays until a Super Admin removes it on the Roles page.",
                             reasonLabel: "Reason (recorded in the audit log)",
                             confirmLabel: "End profile",
                             tone: "danger",

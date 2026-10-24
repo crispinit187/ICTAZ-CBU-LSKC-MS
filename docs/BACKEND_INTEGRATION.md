@@ -18,6 +18,7 @@ SQL Editor, in this order, each file once (all are safe to run twice):
 10. `20261022_0010_executive_pictures.sql` (also re-run 0005 once)
 11. `20261022_0011_picture_upload_fix.sql` (fixes picture uploads; run once)
 12. `20261022_0012_reviewer_read_only.sql` (Reviewer read-only access; run once)
+13. `20261022_0013_roles_for_everyone.sql` (roles for any member, Registrar privileges on top; run once, and do not run 0005 again after it)
 
 Edge Functions (CLI, `--no-verify-jwt --use-api`): `forgot-password`, `admin-create-user`, `admin-reset-password`, and redeploy `sign-in`.
 

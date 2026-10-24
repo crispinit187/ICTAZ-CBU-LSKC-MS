@@ -7,6 +7,7 @@ import { live, rpc } from "../lib/api.js";
 export default function RoleAssignmentPage() {
   const [people, setPeople] = useState(null);
   const [err, setErr] = useState("");
+  const [roleNames, setRoleNames] = useState(null);
   const q = useRef("");
   const timer = useRef(null);
 
@@ -20,7 +21,9 @@ export default function RoleAssignmentPage() {
   }, []);
 
   useEffect(() => {
-    if (live()) load();
+    if (!live()) return;
+    load();
+    rpc("list_assignable_roles").then((r) => !r.error && setRoleNames(r.data));
   }, [load]);
 
   if (!live()) return <RoleAssignment />;
@@ -47,6 +50,7 @@ export default function RoleAssignmentPage() {
   };
   const real = {
     people,
+    roleNames: roleNames || [],
     onSearch: (text) => {
       q.current = text;
       clearTimeout(timer.current);
@@ -60,8 +64,14 @@ export default function RoleAssignmentPage() {
           p_reason: reason,
         }),
       ),
-    removeRole: async (id, reason) =>
-      after(await rpc("remove_role", { p_member: id, p_reason: reason })),
+    removeRole: async (id, reason, role) =>
+      after(
+        await rpc("remove_role", {
+          p_member: id,
+          p_reason: reason,
+          p_role: role || null,
+        }),
+      ),
     endProfile: async (profileId, reason) =>
       after(
         await rpc("end_executive", { p_profile: profileId, p_reason: reason }),

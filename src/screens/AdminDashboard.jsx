@@ -1,7 +1,11 @@
 import React from "react";
 import { actionText, ago } from "../lib/api.js";
 import ConfirmDialog, { UnsavedGuard } from "../components/ConfirmDialog.jsx";
-import { AdminSidebar, isBuilt } from "../components/admin/AdminShell.jsx";
+import {
+  AccountMenu,
+  AdminSidebar,
+  isBuilt,
+} from "../components/admin/AdminShell.jsx";
 
 const renderScreen = (v, props) => (
   <div
@@ -15,7 +19,7 @@ const renderScreen = (v, props) => (
       fontFamily: "Arial, Helvetica, sans-serif",
     }}
   >
-    <AdminSidebar active="dashboard" pending={v.sidebarPending} />
+    <AdminSidebar active="dashboard" pending={v.sidebarPending} accountTop />
     <main
       style={{
         flex: "1 1 680px",
@@ -125,6 +129,7 @@ const renderScreen = (v, props) => (
               Create session
             </button>
           )}
+          <AccountMenu className="adm-acct-desk" />
         </div>
       </header>
       {v.toast && (

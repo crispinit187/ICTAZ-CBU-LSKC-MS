@@ -380,6 +380,22 @@
     width: 100% !important;
   }
 }
+/* Account menu: in the dashboard header on wide screens, in the top bar on phones */
+.scr-admin .adm-acct-phone {
+  display: none;
+}
+@media (max-width: 820px) {
+  .scr-admin .adm-acct-phone {
+    display: block;
+    margin-left: auto;
+  }
+  .scr-admin .adm-acct-desk {
+    display: none !important;
+  }
+  .scr-admin .adm-acct-phone .acct-name {
+    display: none;
+  }
+}
 /* Waiting registrations on a phone: each person is a small card */
 @media (max-width: 820px) {
   .scr-admin .q-head {

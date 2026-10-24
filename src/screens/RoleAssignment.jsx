@@ -39,9 +39,9 @@ const renderScreen = (v, props) => (
             maxWidth: "760px",
           }}
         >
-          Only a Super Admin can give or remove staff roles. Registrar, Reviewer
-          and Administrator go to current executive members only, and end
-          automatically when their executive profile ends.{v.sampleNote}
+          Only a Super Admin can give or remove roles. Any Active member can be
+          given a role. A person has one main role, and can also hold Registrar
+          privileges on top of it.{v.sampleNote}
         </p>
       </header>
       {v.toast && (
@@ -336,7 +336,7 @@ const renderScreen = (v, props) => (
               }}
             >
               <option value="Registrar">
-                Registrar: mark members manually
+                Registrar: mark attendance (can be added on top of another role)
               </option>
               <option value="Reviewer">Reviewer: read-only oversight</option>
               <option value="Administrator">
@@ -345,6 +345,11 @@ const renderScreen = (v, props) => (
               <option value="Super Admin">
                 Super Admin: everything, including roles
               </option>
+              {v.extraRoles.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
             </select>
             <div
               style={{
@@ -442,11 +447,11 @@ const renderScreen = (v, props) => (
         }}
       >
         <strong style={{ color: "#e8f0ff", fontSize: "14px" }}>
-          What happens when an executive profile ends
+          How roles work
         </strong>
         <br />
         {
-          " Their Registrar, Reviewer or Administrator role is removed automatically, their account goes back to Member, and they are emailed. The change is saved in the audit log as an automatic removal. A Super Admin role is not removed automatically, because a Super Admin does not need to be an executive. "
+          " A role does not depend on being an executive, and it is not removed when an executive profile ends. It stays until a Super Admin removes it, and the person is emailed. Super Admin and Administrator already include Registrar duties. Adding Registrar privileges to a Reviewer gives them the Registrar mode section in the side panel. "
         }
       </section>
     </main>
@@ -524,11 +529,20 @@ class Screen extends React.Component {
       no: p.student_number,
       position: p.position || "",
       role: p.role,
+      roles: p.roles || (p.role && p.role !== "Member" ? [p.role] : []),
       profileId: p.profile_id,
     }));
   }
   renderVals() {
-    const s = Object.assign({}, this.state, { people: this.people() });
+    const s = Object.assign({}, this.state, {
+      people: this.people().map((p) =>
+        p.roles
+          ? p
+          : Object.assign({}, p, {
+              roles: p.role && p.role !== "Member" ? [p.role] : [],
+            }),
+      ),
+    });
     const colors = {
       "Super Admin": [
         "rgba(84,173,255,0.16)",
@@ -540,64 +554,64 @@ class Screen extends React.Component {
       Registrar: ["rgba(255,176,32,0.12)", "rgba(255,176,32,0.45)", "#ffd98a"],
       Member: ["rgba(255,255,255,0.06)", "rgba(255,255,255,0.18)", "#aebfda"],
     };
-    const staffRows = s.people.filter((p) => p.role !== "Member");
-    const superCount = s.people.filter((p) => p.role === "Super Admin").length;
-    const staff = staffRows.map((p) => {
-      const c = colors[p.role];
-      const lastSuper = p.role === "Super Admin" && superCount <= 1;
+    const plain = [
+      "rgba(255,255,255,0.06)",
+      "rgba(255,255,255,0.18)",
+      "#dce8f8",
+    ];
+    const staffRows = [];
+    s.people.forEach((p) => {
+      p.roles.forEach((role) => staffRows.push({ p: p, role: role }));
+    });
+    const superCount = s.people.filter((p) =>
+      p.roles.includes("Super Admin"),
+    ).length;
+    const staff = staffRows.map(({ p, role }) => {
+      const c = colors[role] || plain;
+      const lastSuper = role === "Super Admin" && superCount <= 1;
+      const addOn = role === "Registrar" && p.roles.length > 1;
       return {
         name: p.name,
         no: p.no,
         position: p.position || "Not an executive",
-        role: p.role,
+        role: addOn ? "Registrar privileges" : role,
         chipBg: c[0],
         chipBorder: c[1],
         chipColor: c[2],
         removeDisabled: lastSuper,
         removeTitle: lastSuper
           ? "The last Active Super Admin cannot be removed"
-          : "Return this person to Member",
-        canEnd: p.role !== "Super Admin" && !!p.position,
+          : "Remove this role",
+        canEnd: false,
         remove: (reason) => {
           const msg =
             "Removed the " +
-            p.role +
+            (addOn ? "Registrar privileges" : role) +
             " role from " +
             p.name +
             ". They have been emailed and the change is in the audit log.";
           return this.props.real
-            ? this.setRoleReal(p, "Member", msg, "ok", reason)
-            : this.setRole(p.id, "Member", msg, "ok");
+            ? this.setRoleReal(p, "Member", msg, "ok", reason, false, role)
+            : this.setRole(p.id, role, msg, "ok");
         },
-        endProfile: (reason) => {
-          const msg =
-            "The executive profile for " +
-            p.name +
-            " ended, so the " +
-            p.role +
-            " role was removed automatically. They have been emailed.";
-          return this.props.real
-            ? this.setRoleReal(p, "Member", msg, "info", reason, true)
-            : this.setRole(p.id, "Member", msg, "info", true);
-        },
+        endProfile: () => {},
       };
     });
     const cur = s.people.find((p) => String(p.id) === s.selMember) ||
-      (this.props.real && s.people.find((p) => p.role === "Member")) ||
+      (this.props.real && s.people.find((p) => p.roles.length === 0)) ||
       s.people[0] || {
         id: "",
         name: "Nobody",
         no: "",
         position: "",
         role: "Member",
+        roles: [],
       };
-    const staffRole =
-      s.selRole === "Registrar" ||
-      s.selRole === "Reviewer" ||
-      s.selRole === "Administrator";
-    const isExec = !!cur.position;
-    const blocked = staffRole && !isExec;
-    const same = cur.role === s.selRole;
+    const blocked =
+      s.selRole === "Registrar" &&
+      (cur.roles.includes("Super Admin") ||
+        cur.roles.includes("Administrator"));
+    const same = cur.roles.includes(s.selRole);
     const notes = {
       Registrar:
         "Can search members, mark present, unmark and excuse. No analytics, exports or accounts.",
@@ -606,8 +620,10 @@ class Screen extends React.Component {
       Administrator:
         "Runs sessions, accounts, executives and reports. Cannot assign roles or change system settings.",
       "Super Admin":
-        "Highest role. Can also assign roles and change settings, email templates and the Terms. Does not need to be an executive.",
+        "Highest role. Can also assign roles and change settings, email templates and the Terms.",
     };
+    notes.Registrar +=
+      " Can be added on top of another role, which adds the Registrar mode section.";
     const tone = {
       ok: ["rgba(61,220,151,0.1)", "rgba(61,220,151,0.4)", "#9df0c8"],
       info: ["rgba(84,173,255,0.1)", "rgba(84,173,255,0.4)", "#bcd6ff"],
@@ -619,7 +635,7 @@ class Screen extends React.Component {
     ];
     return {
       staff: staff,
-      staffCount: staff.length,
+      staffCount: s.people.filter((p) => p.roles.length).length,
       toast: s.toast,
       toastBg: tone[0],
       toastBorder: tone[1],
@@ -637,13 +653,22 @@ class Screen extends React.Component {
       memberOptions: s.people.map((p) => ({
         id: String(p.id),
         label:
-          p.name + " · " + (p.position || "not an executive") + " · " + p.role,
+          p.name +
+          " · " +
+          (p.position || "not an executive") +
+          " · " +
+          (p.roles.length ? p.roles.join(" + ") : "Member"),
       })),
-      roleNote: notes[s.selRole],
+      roleNote: notes[s.selRole] || "",
+      extraRoles: ((this.props.real && this.props.real.roleNames) || []).filter(
+        (n) =>
+          ["Registrar", "Reviewer", "Administrator", "Super Admin"].indexOf(n) <
+          0,
+      ),
       blocked: blocked,
       blockedMsg:
         cur.name +
-        " has no current executive profile. Registrar, Reviewer and Administrator can only be given to current executives. Add an executive profile first.",
+        " already has Registrar duties through their role, so Registrar privileges do not need to be added.",
       assignDisabled: blocked || same || s.reason.trim().length < 3,
       onMember: (e) => this.setState({ selMember: e.target.value }),
       onRole: (e) => this.setState({ selRole: e.target.value }),
@@ -669,12 +694,12 @@ class Screen extends React.Component {
       },
     };
   }
-  async setRoleReal(p, role, msg, kind, reason, ending) {
+  async setRoleReal(p, role, msg, kind, reason, ending, removeName) {
     const r = this.props.real;
     const err = ending
       ? await r.endProfile(p.profileId, reason)
       : role === "Member"
-        ? await r.removeRole(p.id, reason)
+        ? await r.removeRole(p.id, reason, removeName)
         : await r.assignRole(p.id, role, reason);
     this.setState(
       err
@@ -687,6 +712,7 @@ class Screen extends React.Component {
       p.id === id
         ? Object.assign({}, p, {
             role: role,
+            roles: role === "Member" ? [] : [role],
             position: clearPosition ? "" : p.position,
           })
         : p,
@@ -714,34 +740,18 @@ class Screen extends React.Component {
     };
     v.staff.forEach((p) => {
       const rm = p.remove;
-      const end = p.endProfile;
       p.remove = () =>
         this.ask({
           title: "Remove the " + p.role + " role?",
           body:
             p.name +
-            " goes back to Member straight away and is emailed. The change is recorded in the audit log.",
+            " loses this role straight away and is emailed. The change is recorded in the audit log.",
           confirmLabel: "Remove role",
           reasonLabel: this.props.real
             ? "Reason (recorded in the audit log)"
             : undefined,
           tone: "danger",
           run: rm,
-        });
-      p.endProfile = () =>
-        this.ask({
-          title: "End the executive profile?",
-          body:
-            p.name +
-            " stops being an executive, so the " +
-            p.role +
-            " role is removed automatically.",
-          confirmLabel: "End profile",
-          reasonLabel: this.props.real
-            ? "Reason (recorded in the audit log)"
-            : undefined,
-          tone: "danger",
-          run: end,
         });
     });
     const doAssign = v.assign;

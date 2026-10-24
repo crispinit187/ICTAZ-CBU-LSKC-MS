@@ -93,7 +93,169 @@ const label = {
   letterSpacing: 2,
 };
 
-export function AdminSidebar({ active, pending }) {
+/* Profile and Sign out as a small menu (top right of the dashboard). */
+export function AccountMenu({ className }) {
+  const auth = useAuth();
+  const nav = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [ask, setAsk] = useState(null);
+  const ctx = auth.ctx;
+  const name = ctx ? ctx.name : "Sample Administrator";
+  const roles = (ctx && ctx.roles ? ctx.roles : []).filter(
+    (x) => x !== "Member",
+  );
+  const initials =
+    String(name)
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0].toUpperCase())
+      .join("") || "?";
+  useEffect(() => {
+    if (!open) return undefined;
+    const k = (e) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", k);
+    return () => window.removeEventListener("keydown", k);
+  }, [open]);
+  const signOut = () => {
+    setOpen(false);
+    setAsk({
+      title: "Sign out?",
+      body: "You will need to sign in again to continue.",
+      confirmLabel: "Sign out",
+      tone: "info",
+      run: async () => {
+        if (await auth.leave()) return;
+        nav("/login", { replace: true });
+      },
+    });
+  };
+  const item = {
+    display: "block",
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "11px 14px",
+    background: "transparent",
+    border: "none",
+    borderRadius: 8,
+    color: "#fff",
+    fontFamily: "inherit",
+    fontSize: 14,
+    fontWeight: 600,
+    textAlign: "left",
+    cursor: "pointer",
+  };
+  return (
+    <div className={className} style={{ position: "relative" }}>
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={"Account menu for " + name}
+        onClick={() => setOpen(!open)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          minHeight: 44,
+          padding: "4px 12px 4px 4px",
+          border: "1px solid #333",
+          borderRadius: 24,
+          background: "transparent",
+          color: "#fff",
+          fontFamily: "inherit",
+          cursor: "pointer",
+        }}
+      >
+        <span
+          aria-hidden="true"
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg,#0066ff,#003d99)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 13,
+            fontWeight: "bold",
+          }}
+        >
+          {initials}
+        </span>
+        <span className="acct-name" style={{ fontSize: 14, fontWeight: 600 }}>
+          {name}
+        </span>
+        <span aria-hidden="true" style={{ color: "#8a99b3", fontSize: 11 }}>
+          ▾
+        </span>
+      </button>
+      {open && (
+        <>
+          <div
+            aria-hidden="true"
+            onClick={() => setOpen(false)}
+            style={{ position: "fixed", inset: 0, zIndex: 70 }}
+          ></div>
+          <div
+            role="menu"
+            style={{
+              position: "absolute",
+              right: 0,
+              top: "calc(100% + 8px)",
+              zIndex: 80,
+              width: 230,
+              boxSizing: "border-box",
+              padding: 8,
+              borderRadius: 14,
+              background: "#0d0d0d",
+              border: "1px solid #2a2a2a",
+              boxShadow: "0 12px 40px rgba(0,0,0,0.6)",
+            }}
+          >
+            <div style={{ padding: "8px 14px 10px" }}>
+              <div style={{ fontSize: 14, fontWeight: "bold" }}>{name}</div>
+              <div style={{ marginTop: 2, color: "#8a99b3", fontSize: 12 }}>
+                {ctx
+                  ? roles.join(" + ") || "Member"
+                  : "Administrator · Executive"}
+              </div>
+            </div>
+            <Link
+              role="menuitem"
+              to="/profile"
+              onClick={() => setOpen(false)}
+              style={{ ...item, color: "#fff" }}
+            >
+              Profile
+            </Link>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={signOut}
+              style={item}
+            >
+              Sign out
+            </button>
+          </div>
+        </>
+      )}
+      {ask && (
+        <ConfirmDialog
+          cfg={ask}
+          onCancel={() => setAsk(null)}
+          onConfirm={() => {
+            const run = ask.run;
+            setAsk(null);
+            run();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+export function AdminSidebar({ active, pending, accountTop }) {
   const auth = useAuth();
   const [count, setCount] = useState(null);
   const canApprove =
@@ -146,6 +308,7 @@ export function AdminSidebar({ active, pending }) {
           {"ICTAZ "}
           <span style={{ color: "#0066ff" }}>CBU</span>
         </span>
+        {accountTop && <AccountMenu className="adm-acct-phone" />}
       </div>
       {menu && (
         <div
@@ -229,58 +392,82 @@ export function AdminSidebar({ active, pending }) {
             </React.Fragment>
           );
         })}
+        {(open || can(ctx, "attendance.mark_manual")) && (
+          <>
+            <div style={{ ...label, paddingTop: 18 }}>REGISTRAR MODE</div>
+            <Link
+              className="nav-item"
+              to="/registrar"
+              aria-current={active === "registrar" ? "page" : undefined}
+              style={
+                active === "registrar"
+                  ? { background: "rgba(0,102,255,0.14)", color: "#54adff" }
+                  : undefined
+              }
+            >
+              <span>Mark attendance</span>
+            </Link>
+            {(open || can(ctx, "session.qr_display")) && (
+              <Link className="nav-item" to="/display">
+                <span>QR display</span>
+              </Link>
+            )}
+          </>
+        )}
         <div style={{ flexGrow: 1 }}></div>
-        <div
-          style={{
-            padding: 14,
-            borderRadius: 12,
-            background: "rgba(255,255,255,0.035)",
-            border: "1px solid rgba(255,255,255,0.08)",
-          }}
-        >
-          <div style={{ fontSize: 14, fontWeight: "bold" }}>
-            {ctx ? ctx.name : "Sample Administrator"}
-          </div>
-          <div style={{ marginTop: 3, color: "#8a99b3", fontSize: 12 }}>
-            {ctx ? roles.join(", ") || "Member" : "Administrator · Executive"}
-          </div>
-          <Link
-            to="/profile"
+        {!accountTop && (
+          <div
             style={{
-              display: "inline-block",
-              marginTop: 10,
-              marginRight: 14,
-              fontSize: 13,
-              fontWeight: 600,
+              padding: 14,
+              borderRadius: 12,
+              background: "rgba(255,255,255,0.035)",
+              border: "1px solid rgba(255,255,255,0.08)",
             }}
           >
-            Profile
-          </Link>
-          <a
-            href="#signout"
-            onClick={(e) => {
-              e.preventDefault();
-              setAsk({
-                title: "Sign out?",
-                body: "You will need to sign in again to continue.",
-                confirmLabel: "Sign out",
-                tone: "info",
-                run: async () => {
-                  if (await auth.leave()) return;
-                  nav("/login", { replace: true });
-                },
-              });
-            }}
-            style={{
-              display: "inline-block",
-              marginTop: 10,
-              fontSize: 13,
-              fontWeight: 600,
-            }}
-          >
-            Sign out
-          </a>
-        </div>
+            <div style={{ fontSize: 14, fontWeight: "bold" }}>
+              {ctx ? ctx.name : "Sample Administrator"}
+            </div>
+            <div style={{ marginTop: 3, color: "#8a99b3", fontSize: 12 }}>
+              {ctx ? roles.join(", ") || "Member" : "Administrator · Executive"}
+            </div>
+            <Link
+              to="/profile"
+              style={{
+                display: "inline-block",
+                marginTop: 10,
+                marginRight: 14,
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
+              Profile
+            </Link>
+            <a
+              href="#signout"
+              onClick={(e) => {
+                e.preventDefault();
+                setAsk({
+                  title: "Sign out?",
+                  body: "You will need to sign in again to continue.",
+                  confirmLabel: "Sign out",
+                  tone: "info",
+                  run: async () => {
+                    if (await auth.leave()) return;
+                    nav("/login", { replace: true });
+                  },
+                });
+              }}
+              style={{
+                display: "inline-block",
+                marginTop: 10,
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
+              Sign out
+            </a>
+          </div>
+        )}
         {ask && (
           <ConfirmDialog
             cfg={ask}
