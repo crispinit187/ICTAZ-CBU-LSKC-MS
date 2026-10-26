@@ -35,8 +35,21 @@ function Field({ label, children }) {
 }
 
 /* Side panel: one member's details with the actions the viewer is allowed to use. */
-function Detail({ id, onClose, onChanged, onDeleted, canDo }) {
+function Detail({ id, onClose, onChanged, onDeleted, canDo: baseCan }) {
   const [m, setM] = useState(null);
+  // Only a Super Admin may change a Super Admin's account.
+  const locked =
+    !!m && (m.roles || []).includes("Super Admin") && !baseCan.isSuper;
+  const canDo = locked
+    ? {
+        ...baseCan,
+        edit: false,
+        number: false,
+        suspend: false,
+        reset: false,
+        del: false,
+      }
+    : baseCan;
   const [err, setErr] = useState("");
   const [msg, setMsg] = useState("");
   const [form, setForm] = useState(null);
@@ -310,7 +323,9 @@ function Detail({ id, onClose, onChanged, onDeleted, canDo }) {
           )}
           {!canDo.edit && (
             <div style={{ color: T.dim, fontSize: 13 }}>
-              Your role sees limited details only.
+              {locked
+                ? "Super Admin accounts can only be managed by another Super Admin."
+                : "Your role sees limited details only."}
             </div>
           )}
           {canDo.edit && (
@@ -804,6 +819,7 @@ export default function MembersPage() {
     reset: can(ctx, "account.reset_password"),
     create: can(ctx, "account.create"),
     del: can(ctx, "member.delete"),
+    isSuper: !ctx || (ctx.roles || []).includes("Super Admin"),
   };
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
