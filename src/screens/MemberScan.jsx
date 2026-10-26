@@ -17,48 +17,50 @@ const renderScreen = (v, props) => (
       overflow: "hidden",
     }}
   >
-    <nav
-      style={{
-        height: "60px",
-        flexShrink: "0",
-        padding: "0 20px",
-        boxSizing: "border-box",
-        background: "#000000",
-        borderBottom: "1px solid #1c1c1c",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-      }}
-    >
-      <a
-        href="#"
+    {!props.framed && (
+      <nav
         style={{
-          fontSize: "20px",
-          fontWeight: "bold",
-          letterSpacing: "-0.5px",
-          color: "#ffffff",
-        }}
-      >
-        {"ICTAZ "}
-        <span style={{ color: "#0066ff" }}>CBU</span>
-      </a>
-      <div
-        style={{
+          height: "60px",
+          flexShrink: "0",
+          padding: "0 20px",
+          boxSizing: "border-box",
+          background: "#000000",
+          borderBottom: "1px solid #1c1c1c",
           display: "flex",
           alignItems: "center",
-          gap: "16px",
-          fontSize: "13px",
-          fontWeight: "600",
+          justifyContent: "space-between",
         }}
       >
-        <a href="#profile" onClick={v.goProfile} style={{ color: "#aaaaaa" }}>
-          My account
+        <a
+          href="#"
+          style={{
+            fontSize: "20px",
+            fontWeight: "bold",
+            letterSpacing: "-0.5px",
+            color: "#ffffff",
+          }}
+        >
+          {"ICTAZ "}
+          <span style={{ color: "#0066ff" }}>CBU</span>
         </a>
-        <a href="#" onClick={v.signOut}>
-          Sign out
-        </a>
-      </div>
-    </nav>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+            fontSize: "13px",
+            fontWeight: "600",
+          }}
+        >
+          <a href="#profile" onClick={v.goProfile} style={{ color: "#aaaaaa" }}>
+            My account
+          </a>
+          <a href="#" onClick={v.signOut}>
+            Sign out
+          </a>
+        </div>
+      </nav>
+    )}
     {v.isIdle && (
       <>
         <div

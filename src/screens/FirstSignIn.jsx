@@ -247,7 +247,7 @@ export default function FirstSignIn() {
           <PrimaryButton
             type="button"
             onClick={() =>
-              nav(real ? homeFor(auth.ctx) : staff ? "/admin" : "/scan")
+              nav(real ? homeFor(auth.ctx) : staff ? "/admin" : "/sessions")
             }
           >
             Continue

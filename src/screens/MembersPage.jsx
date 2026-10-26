@@ -13,6 +13,7 @@ import {
 } from "../components/admin/ui.jsx";
 import { can, useAuth } from "../auth/AuthProvider.jsx";
 import { callFunction, live, rpc } from "../lib/api.js";
+import AttendanceHistory from "../components/AttendanceHistory.jsx";
 
 const PAGE = 25;
 
@@ -77,6 +78,11 @@ function Detail({ id, onClose, onChanged, onDeleted, canDo: baseCan }) {
     setTemp("");
     load();
   }, [load]);
+
+  const loadAttendance = useCallback(
+    (scope) => rpc("member_attendance", { p_member: id, p_scope: scope }),
+    [id],
+  );
 
   const act = async (fn, ok) => {
     setErr("");
@@ -429,6 +435,9 @@ function Detail({ id, onClose, onChanged, onDeleted, canDo: baseCan }) {
                 </Btn>
               </div>
             </div>
+          )}
+          {canDo.attendance && live() && (
+            <AttendanceHistory title="Attendance" load={loadAttendance} />
           )}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {canDo.suspend && m.status === "Active" && (
@@ -819,6 +828,7 @@ export default function MembersPage() {
     reset: can(ctx, "account.reset_password"),
     create: can(ctx, "account.create"),
     del: can(ctx, "member.delete"),
+    attendance: can(ctx, "member.view_attendance"),
     isSuper: !ctx || (ctx.roles || []).includes("Super Admin"),
   };
   const [q, setQ] = useState("");

@@ -44,7 +44,7 @@ export function homeFor(ctx) {
   const p = (ctx && ctx.permissions) || [];
   if (p.includes("analytics.view")) return "/admin";
   if (p.includes("attendance.mark_manual")) return "/registrar";
-  return "/scan";
+  return "/sessions";
 }
 
 export const can = (ctx, code) =>

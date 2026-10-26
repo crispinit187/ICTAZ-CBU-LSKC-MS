@@ -21,6 +21,7 @@ SQL Editor, in this order, each file once (all are safe to run twice):
 13. `20261022_0013_roles_for_everyone.sql` (roles for any member, Registrar privileges on top; run once, and do not run 0005 again after it)
 14. `20261022_0014_account_deletion.sql` (members can ask to be deleted, Super Admin approves or deletes a Deactivated account; erases the person and keeps the records. Also deploy the Edge Function `admin-delete-account`, and redeploy `send-queued-emails`)
 15. `20261022_0015_protect_super_admin.sql` (only a Super Admin can suspend, deactivate, edit or change the student number of a Super Admin)
+16. `20261022_0016_posters_attendance_history.sql` (poster on a session, upcoming sessions for members, attendance history for members and for Reviewer / Administrator / Super Admin; also create the public storage area `session-posters` if the migration reports the storage schema missing)
 
 Edge Functions (CLI, `--no-verify-jwt --use-api`): `forgot-password`, `admin-create-user`, `admin-reset-password`, `send-queued-emails`, `admin-delete-account`, and redeploy `sign-in`.
 

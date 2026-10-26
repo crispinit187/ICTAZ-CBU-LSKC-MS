@@ -13,7 +13,8 @@ import { demoOpen } from "../../lib/supabase.js";
 import { live, rpc } from "../../lib/api.js";
 import ConfirmDialog from "../ConfirmDialog.jsx";
 import { AccountMenu, GROUPS, label } from "./AdminShell.jsx";
-import { AdminChrome, PageTransition } from "./adminChrome.js";
+import { AdminChrome, Framed, PageTransition } from "./adminChrome.js";
+import { homeFor } from "../../auth/AuthProvider.jsx";
 
 /* One small line icon per page, shown on its own when the side panel is collapsed. */
 const ICONS = {
@@ -32,7 +33,22 @@ const ICONS = {
     "M4 6h10 M18 6h2 M4 12h4 M12 12h8 M4 18h12 M14 4v4 M8 10v4 M16 16v4",
   registrar: "M9 4h6v3H9z M7 5H5v16h14V5h-2 M9 14l2 2 4-4",
   display: "M3 4h18v12H3z M8 20h8 M12 16v4",
+  account:
+    "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1",
+  scan: "M4 8V5a1 1 0 0 1 1-1h3 M16 4h3a1 1 0 0 1 1 1v3 M20 16v3a1 1 0 0 1-1 1h-3 M8 20H5a1 1 0 0 1-1-1v-3 M4 12h16",
 };
+
+/* The member side panel: My account, Sessions, Scan attendance. */
+const MEMBER_GROUPS = [
+  {
+    title: "MY SPACE",
+    items: [
+      { key: "sessions", label: "Sessions", to: "/sessions" },
+      { key: "account", label: "My account", to: "/profile" },
+      { key: "scan", label: "Scan attendance", to: "/scan" },
+    ],
+  },
+];
 function Icon({ name }) {
   return (
     <svg
@@ -62,10 +78,10 @@ const readCollapsed = () => {
 };
 
 /* The page the menu should mark: the exact address, or a page inside it. */
-function activeKeyFor(path) {
+function activeKeyFor(path, groups = GROUPS) {
   let best = "";
   let key = "";
-  GROUPS.forEach((g) =>
+  groups.forEach((g) =>
     g.items.forEach((it) => {
       const hit =
         path === it.to || (it.to !== "/admin" && path.startsWith(it.to + "/"));
@@ -108,7 +124,7 @@ const badgeStyle = {
   fontWeight: "bold",
 };
 
-function Sidebar({ active, pending, accountTop, collapsed, onToggle }) {
+function Sidebar({ active, pending, accountTop, collapsed, onToggle, member }) {
   const auth = useAuth();
   const nav = useNavigate();
   const [count, setCount] = useState(null);
@@ -151,7 +167,26 @@ function Sidebar({ active, pending, accountTop, collapsed, onToggle }) {
   const open = demoOpen || !auth.configured;
   const ctx = auth.ctx;
   const show = (it) =>
-    it.built !== false && (open || it.any.some((c) => can(ctx, c)));
+    member || (it.built !== false && (open || it.any.some((c) => can(ctx, c))));
+  const home = ctx ? homeFor(ctx) : "/admin";
+  // people who also run the chapter get a way back to their dashboard
+  const groups = member
+    ? home === "/sessions"
+      ? MEMBER_GROUPS
+      : [
+          {
+            title: "MANAGE",
+            items: [
+              {
+                key: "dashboard",
+                label: home === "/registrar" ? "Mark attendance" : "Dashboard",
+                to: home,
+              },
+            ],
+          },
+          ...MEMBER_GROUPS,
+        ]
+    : GROUPS;
   const roles = (ctx && ctx.roles ? ctx.roles : []).filter(
     (r) => r !== "Member",
   );
@@ -264,7 +299,7 @@ function Sidebar({ active, pending, accountTop, collapsed, onToggle }) {
           ✕
         </button>
         <div className="adm-brand">
-          <Link to="/admin" className="adm-logo">
+          <Link to={member ? home : "/admin"} className="adm-logo">
             {"ICTAZ "}
             <span style={{ color: "#0066ff" }}>CBU</span>
           </Link>
@@ -300,7 +335,7 @@ function Sidebar({ active, pending, accountTop, collapsed, onToggle }) {
         <nav
           ref={navRef}
           className={"adm-nav " + navBar.className}
-          aria-label="Management pages"
+          aria-label={member ? "My pages" : "Management pages"}
           onScroll={navBar.onScroll}
           onMouseMove={navBar.onMouseMove}
           onMouseEnter={navBar.onMouseEnter}
@@ -312,7 +347,7 @@ function Sidebar({ active, pending, accountTop, collapsed, onToggle }) {
             style={{ transform: `translateY(${ind.y}px)`, height: ind.h }}
             aria-hidden="true"
           ></div>
-          {GROUPS.map((g, gi) => {
+          {groups.map((g, gi) => {
             const items = g.items.filter(show);
             if (!items.length) return null;
             return (
@@ -349,7 +384,7 @@ function Sidebar({ active, pending, accountTop, collapsed, onToggle }) {
               </React.Fragment>
             );
           })}
-          {(open || can(ctx, "attendance.mark_manual")) && (
+          {!member && (open || can(ctx, "attendance.mark_manual")) && (
             <>
               <div className="nav-group" style={{ ...label, paddingTop: 18 }}>
                 <span>REGISTRAR MODE</span>
@@ -452,7 +487,7 @@ function Sidebar({ active, pending, accountTop, collapsed, onToggle }) {
 
 /* The frame of every management page: the side panel is drawn once and stays put while the
    pages change inside it. On a computer the panel is pinned and the page scrolls on its own. */
-export default function AdminLayout() {
+export default function AdminLayout({ member = false }) {
   const auth = useAuth();
   const trans = useContext(PageTransition);
   const [pending, setPending] = useState(undefined);
@@ -472,7 +507,10 @@ export default function AdminLayout() {
     if (content.current) content.current.scrollTop = 0;
   }, [trans.shownPath]);
   const chrome = useMemo(() => ({ setPending }), []);
-  const active = activeKeyFor(trans.livePath || "");
+  const active = activeKeyFor(
+    trans.livePath || "",
+    member ? MEMBER_GROUPS : GROUPS,
+  );
   const framed = demoOpen || !auth.configured || (auth.ready && auth.ctx);
   if (!framed) return <Outlet />;
   return (
@@ -488,7 +526,8 @@ export default function AdminLayout() {
         <Sidebar
           active={active}
           pending={pending}
-          accountTop={active === "dashboard"}
+          accountTop={!member && active === "dashboard"}
+          member={member}
           collapsed={collapsed}
           onToggle={toggle}
         />
@@ -503,7 +542,9 @@ export default function AdminLayout() {
             key={trans.shownPath}
             className={"adm-page page-" + (trans.contentPhase || "in")}
           >
-            <Outlet />
+            <Framed.Provider value={member}>
+              <Outlet />
+            </Framed.Provider>
           </div>
         </div>
       </div>

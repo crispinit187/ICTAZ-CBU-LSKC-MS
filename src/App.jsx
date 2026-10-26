@@ -27,6 +27,7 @@ import SettingsPage from "./screens/SettingsPage.jsx";
 import RegistrarPage from "./screens/RegistrarPage.jsx";
 import QrDisplayPage, { BackHome } from "./screens/QrDisplayPage.jsx";
 import MemberScan from "./screens/MemberScan.jsx";
+import MemberHome from "./screens/MemberHome.jsx";
 import RoleAssignmentPage from "./screens/RoleAssignmentPage.jsx";
 import RegisterScreen from "./screens/RegisterScreen.jsx";
 import FirstSignIn from "./screens/FirstSignIn.jsx";
@@ -36,7 +37,6 @@ import ResetPassword from "./screens/ResetPassword.jsx";
 import PublicExecutives from "./screens/PublicExecutives.jsx";
 import LegalPage from "./screens/LegalPage.jsx";
 import FitStage from "./components/FitStage.jsx";
-import PhoneFrame from "./components/PhoneFrame.jsx";
 
 function useMedia(query) {
   const [matches, setMatches] = useState(
@@ -147,14 +147,26 @@ function Scan() {
         }
       : undefined;
   return (
-    <PhoneFrame>
+    <div
+      style={{
+        maxWidth: 430,
+        height: "calc(100vh - 32px)",
+        minHeight: 600,
+        margin: "16px auto",
+        borderRadius: 22,
+        overflow: "hidden",
+        border: "1px solid #1c1c1c",
+        background: "#050505",
+      }}
+    >
       <Routed
         as={MemberScan}
         demoState={params.get("demo") || "success"}
         real={real}
+        framed
         onNavigate={nav}
       />
-    </PhoneFrame>
+    </div>
   );
 }
 
@@ -220,8 +232,13 @@ export default function App() {
   }, [location]);
   // Inside the management pages the side panel stays mounted: only the page area fades.
   const inAdmin = (p) => p === "/roles" || p.startsWith("/admin");
-  const both = inAdmin(shown.pathname) && inAdmin(location.pathname);
-  const group = inAdmin(shown.pathname) ? "admin" : shown.pathname;
+  const inMember = (p) =>
+    p === "/scan" || p === "/profile" || p === "/sessions";
+  const groupOf = (p) => (inAdmin(p) ? "admin" : inMember(p) ? "member" : p);
+  const both =
+    groupOf(shown.pathname) === groupOf(location.pathname) &&
+    groupOf(shown.pathname) !== shown.pathname;
+  const group = groupOf(shown.pathname);
   const trans = {
     phase,
     contentPhase: both ? phase : "in",
@@ -242,14 +259,6 @@ function AppRoutes({ location }) {
     <Routes location={location}>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
-      <Route
-        path="/scan"
-        element={
-          <Protected need="attendance.scan">
-            <Scan />
-          </Protected>
-        }
-      />
       <Route
         path="/display"
         element={
@@ -365,14 +374,32 @@ function AppRoutes({ location }) {
           </GateOnly>
         }
       />
-      <Route
-        path="/profile"
-        element={
-          <Protected need="attendance.scan">
-            <ExecutiveProfile />
-          </Protected>
-        }
-      />
+      <Route element={<AdminLayout member />}>
+        <Route
+          path="/sessions"
+          element={
+            <Protected>
+              <MemberHome />
+            </Protected>
+          }
+        />
+        <Route
+          path="/scan"
+          element={
+            <Protected need="attendance.scan">
+              <Scan />
+            </Protected>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <Protected need="attendance.scan">
+              <ExecutiveProfile />
+            </Protected>
+          }
+        />
+      </Route>
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/executives" element={<PublicExecutives />} />

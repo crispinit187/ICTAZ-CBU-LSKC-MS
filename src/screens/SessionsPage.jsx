@@ -15,6 +15,12 @@ import {
 import { can, useAuth } from "../auth/AuthProvider.jsx";
 import { live, rpc } from "../lib/api.js";
 import { fromLocalInput, toLocalInput, whenText } from "../lib/format.js";
+import {
+  checkPoster,
+  posterUrl,
+  removePosterFile,
+  uploadPoster,
+} from "../lib/poster.js";
 
 const STATUS_CHIP = {
   Scheduled: "Pending",
@@ -60,6 +66,30 @@ function SessionForm({ initial, onClose, onSaved }) {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  // poster: keep the current one, replace it with a chosen file, or remove it
+  const [posterFile, setPosterFile] = useState(null);
+  const [posterPreview, setPosterPreview] = useState(null);
+  const [posterGone, setPosterGone] = useState(false);
+  useEffect(
+    () => () => posterPreview && URL.revokeObjectURL(posterPreview),
+    [posterPreview],
+  );
+  const pickPoster = (e) => {
+    const fl = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!fl) return;
+    const bad = checkPoster(fl);
+    if (bad) return setErr(bad);
+    setErr("");
+    setPosterFile(fl);
+    setPosterGone(false);
+    setPosterPreview(URL.createObjectURL(fl));
+  };
+  const shownPoster =
+    posterPreview ||
+    (!posterGone && initial && initial.poster_path
+      ? posterUrl(initial.poster_path)
+      : null);
 
   useEffect(() => {
     if (q.trim().length < 2) return setFound([]);
@@ -96,12 +126,41 @@ function SessionForm({ initial, onClose, onSaved }) {
     const r = editing
       ? await rpc("update_session", { p_id: initial.id, ...args })
       : await rpc("create_session", args);
+    if (r.error) {
+      setBusy(false);
+      return setErr(r.error);
+    }
+    // the poster is saved after the session, because its file is kept under the session's number
+    let posterNote = "";
+    const sid = editing ? initial.id : r.data;
+    if (live() && sid && (posterFile || (posterGone && initial))) {
+      let path = null;
+      let ok = true;
+      if (posterFile) {
+        const up = await uploadPoster(sid, posterFile);
+        if (up.error) {
+          ok = false;
+          posterNote =
+            " " + up.error + " Edit the session to add the poster again.";
+        } else path = up.path;
+      }
+      if (ok) {
+        const sp = await rpc("set_session_poster", {
+          p_session: sid,
+          p_path: path,
+        });
+        if (sp.error) {
+          posterNote =
+            " The poster could not be saved. Edit the session to try again.";
+          if (path) await removePosterFile(path);
+        } else if (sp.data) await removePosterFile(sp.data);
+      }
+    }
     setBusy(false);
-    if (r.error) return setErr(r.error);
     onSaved(
-      editing
+      (editing
         ? "Session updated."
-        : "Session created. Open it when the meeting starts.",
+        : "Session created. Open it when the meeting starts.") + posterNote,
     );
   };
 
@@ -281,6 +340,69 @@ function SessionForm({ initial, onClose, onSaved }) {
             >
               Add guest
             </Btn>
+          </div>
+        </div>
+        <div>
+          <span
+            style={{
+              display: "block",
+              marginBottom: 6,
+              color: T.muted,
+              fontSize: 13,
+            }}
+          >
+            Poster (optional)
+          </span>
+          {shownPoster && (
+            <img
+              src={shownPoster}
+              alt="Poster preview"
+              style={{
+                display: "block",
+                maxWidth: 260,
+                maxHeight: 220,
+                borderRadius: 10,
+                border: "1px solid " + T.line,
+                marginBottom: 10,
+              }}
+            />
+          )}
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+          >
+            <input
+              id="poster-file"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={pickPoster}
+              style={{ display: "none" }}
+            />
+            <Btn
+              type="button"
+              onClick={() => document.getElementById("poster-file").click()}
+            >
+              {shownPoster ? "Change poster" : "Choose a poster"}
+            </Btn>
+            {shownPoster && (
+              <Btn
+                type="button"
+                onClick={() => {
+                  setPosterFile(null);
+                  setPosterPreview(null);
+                  setPosterGone(true);
+                }}
+              >
+                Remove poster
+              </Btn>
+            )}
+            <span style={{ color: T.dim, fontSize: 12 }}>
+              JPG, PNG or WebP, up to 3 MB
+            </span>
           </div>
         </div>
         <div>

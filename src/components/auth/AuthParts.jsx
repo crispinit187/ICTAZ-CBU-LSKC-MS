@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { passwordChecks } from "../../lib/password.js";
+import { Framed } from "../admin/adminChrome.js";
 
 export const inputStyle = {
   width: "100%",
@@ -15,6 +16,22 @@ export const inputStyle = {
 };
 
 export function AuthPage({ children, right, width = 600 }) {
+  const framed = useContext(Framed);
+  if (framed)
+    return (
+      <div
+        className="scr-auth"
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          padding: "32px 16px 56px",
+          color: "#ffffff",
+          fontFamily: "Arial, Helvetica, sans-serif",
+        }}
+      >
+        <div style={{ width: "100%", maxWidth: width }}>{children}</div>
+      </div>
+    );
   return (
     <div
       className="scr-auth"

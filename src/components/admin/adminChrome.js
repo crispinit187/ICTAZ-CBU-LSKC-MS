@@ -18,3 +18,6 @@ export function useSidebarPending(value) {
     return () => setPending(undefined);
   }, [value, setPending]);
 }
+
+/* True inside the member side panel, so a page can leave out its own header and sign-out links. */
+export const Framed = createContext(false);

@@ -223,6 +223,14 @@ export function AccountMenu({ className }) {
             </div>
             <Link
               role="menuitem"
+              to="/sessions"
+              onClick={() => setOpen(false)}
+              style={{ ...item, color: "#fff" }}
+            >
+              My sessions
+            </Link>
+            <Link
+              role="menuitem"
               to="/profile"
               onClick={() => setOpen(false)}
               style={{ ...item, color: "#fff" }}

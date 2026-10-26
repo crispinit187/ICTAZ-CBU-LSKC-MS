@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { Framed } from "../components/admin/adminChrome.js";
 import { Link, useNavigate } from "react-router-dom";
 import {
   AuthPage,
@@ -298,21 +299,24 @@ export default function ExecutiveProfile() {
     </div>
   );
 
-  const home = real ? homeFor(auth.ctx) : "/scan";
+  const framed = useContext(Framed);
+  const home = real ? homeFor(auth.ctx) : "/sessions";
   if (real && !prof) return <Splash />;
 
   return (
     <AuthPage width={720} right={signOut}>
-      <BackLink
-        label={
-          home === "/admin"
-            ? "Back to dashboard"
-            : home === "/registrar"
-              ? "Back to marking"
-              : "Back to scan"
-        }
-        to={home}
-      />
+      {!framed && (
+        <BackLink
+          label={
+            home === "/admin"
+              ? "Back to dashboard"
+              : home === "/registrar"
+                ? "Back to marking"
+                : "Back to sessions"
+          }
+          to={home}
+        />
+      )}
       <Eyebrow>MY ACCOUNT</Eyebrow>
       <h1
         style={{
